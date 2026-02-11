@@ -1,0 +1,39 @@
+{
+    "name": "krutai-monorepo",
+    "version": "0.1.0",
+    "private": true,
+    "description": "KrutAI monorepo - AI-powered packages for authentication, analytics, and more",
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "npm run build --workspaces --if-present",
+        "build:krutai": "npm run build -w packages/krutai",
+        "build:auth": "npm run build -w packages/auth",
+        "clean": "npm run clean --workspaces --if-present",
+        "typecheck": "npm run typecheck --workspaces --if-present",
+        "dev": "npm run dev --workspaces --if-present"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.0",
+        "tsup": "^8.0.1",
+        "typescript": "^5.3.3"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AccountantAIOrg/krut_packages.git"
+    },
+    "keywords": [
+        "krutai",
+        "authentication",
+        "analytics",
+        "ai",
+        "monorepo"
+    ],
+    "author": "",
+    "license": "MIT"
+}

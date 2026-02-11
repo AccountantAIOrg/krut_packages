@@ -1,0 +1,42 @@
+{
+    "name": "krutai",
+    "version": "0.1.0",
+    "description": "KrutAI - AI-powered utilities and core package",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "AI_REFERENCE.md"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "krutai",
+        "ai",
+        "utilities"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "tsup": "^8.0.1",
+        "typescript": "^5.3.3"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/krut_packages.git",
+        "directory": "packages/krutai"
+    }
+}
