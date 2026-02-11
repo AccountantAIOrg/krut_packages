@@ -1,8 +1,8 @@
 {
-    "name": "krutai-monorepo",
+    "name": "krutai",
     "version": "0.1.0",
-    "private": true,
-    "description": "KrutAI monorepo - AI-powered packages for authentication, analytics, and more",
+    "private": false,
+    "description": "KrutAI - AI-powered packages for authentication, analytics, and more",
     "workspaces": [
         "packages/*"
     ],
