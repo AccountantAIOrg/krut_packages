@@ -1,6 +1,6 @@
 # @krutai/auth
 
-Authentication package for KrutAI powered by [Better Auth](https://www.better-auth.com/).
+Authentication package for KrutAI powered by [Krut AI](https://www.krut.ai/).
 
 ## Features
 

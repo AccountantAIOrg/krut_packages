@@ -1,7 +1,7 @@
 {
     "name": "@krutai/auth",
     "version": "0.1.0",
-    "description": "Authentication package for KrutAI powered by Better Auth",
+    "description": "Authentication package for KrutAI powered by Krut AI",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
