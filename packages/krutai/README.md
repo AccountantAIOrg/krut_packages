@@ -21,7 +21,7 @@ console.log(metadata);
 
 KrutAI is organized as a monorepo with specialized packages:
 
-- **[@krutai/auth](../auth)** - Authentication package powered by Better Auth
+- **[@krutai/auth](../auth)** - Authentication package powered by [Krut AI](https://www.krut.ai/).
 
 ## Development
 
