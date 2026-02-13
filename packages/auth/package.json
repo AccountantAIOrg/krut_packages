@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Authentication package for KrutAI powered by Krut AI",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -32,7 +32,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "krutai": "^0.1.0",
+        "krutai": "^0.1.1",
         "better-auth": "^1.1.7"
     },
     "devDependencies": {
