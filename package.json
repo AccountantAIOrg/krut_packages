@@ -1,7 +1,7 @@
 {
-    "name": "krutai",
+    "name": "@krutai/root",
     "version": "0.1.0",
-    "private": false,
+    "private": true,
     "description": "KrutAI - AI-powered packages for authentication, analytics, and more",
     "workspaces": [
         "packages/*"

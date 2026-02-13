@@ -7,7 +7,7 @@ AI-powered packages for modern applications.
 This monorepo contains the following packages:
 
 - **[krutai](./packages/krutai)** - Main package with core utilities
-- **[@krutai/auth](./packages/auth)** - Authentication package powered by Better Auth
+- **[@krutai/auth](./packages/auth)** - Authentication package powered by KrutAI
 
 ## Installation
 

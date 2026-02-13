@@ -17,7 +17,15 @@ export const metadata = {
 /**
  * Re-export types and utilities
  */
-export type { KrutAIMetadata } from './types';
+export type { KrutAIMetadata, KrutAIConfig } from './types';
 
 // Export all from types
 export * from './types';
+
+// Export validator utilities
+export {
+    validateApiKeyFormat,
+    validateApiKeyWithService,
+    createApiKeyChecker,
+    ApiKeyValidationError,
+} from './validator';

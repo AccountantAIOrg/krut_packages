@@ -16,6 +16,8 @@ Authentication package for KrutAI powered by [Krut AI](https://www.krut.ai/).
 npm install @krutai/auth
 ```
 
+> **Note:** Installing `@krutai/auth` automatically installs the parent `krutai` package, which provides centralized API key validation for all KrutAI packages.
+
 ## Quick Start
 
 ### Basic Usage
@@ -127,9 +129,35 @@ const apiKey = auth.getApiKey();
 
 **Returns:** `string`
 
+## Architecture
+
+### Dependency on Parent Package
+
+`@krutai/auth` depends on the parent `krutai` package for API key validation:
+
+```
+@krutai/auth
+└── krutai (parent)
+    └── Provides: validateApiKeyFormat, validateApiKeyWithService, etc.
+```
+
+**Benefits:**
+- ✅ All `@krutai/*` packages use the same validation logic from `krutai`
+- ✅ No code duplication across packages
+- ✅ Consistent API key handling
+- ✅ Centralized validation updates benefit all packages
+
+You can also use the validation utilities directly:
+
+```typescript
+import { validateApiKeyFormat, ApiKeyValidationError } from '@krutai/auth';
+// or
+import { validateApiKeyFormat, ApiKeyValidationError } from 'krutai';
+```
+
 ## Error Handling
 
-The package throws `ApiKeyValidationError` when:
+The package throws `ApiKeyValidationError` (from parent `krutai` package) when:
 
 - API key is not provided
 - API key is empty or invalid format

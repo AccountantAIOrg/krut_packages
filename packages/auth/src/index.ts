@@ -13,12 +13,13 @@ export { KrutAuth } from './client';
 // Export types
 export type { KrutAuthConfig, AuthSession, BetterAuthOptions } from './types';
 
-// Export validator utilities
+// Re-export validator utilities from parent krutai package
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
+    createApiKeyChecker,
     ApiKeyValidationError,
-} from './validator';
+} from 'krutai';
 
 // Package metadata
 export const VERSION = '0.1.0';
