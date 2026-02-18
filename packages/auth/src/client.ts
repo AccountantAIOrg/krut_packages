@@ -1,31 +1,31 @@
 import { betterAuth } from 'better-auth';
 import type { KrutAuthConfig } from './types';
-// Import validation from parent krutai package
+// Import validation from local bundled validator (no separate krutai package needed)
 import {
     validateApiKeyFormat,
     validateApiKeyWithService,
-} from 'krutai';
+} from './validator';
 
 /**
  * KrutAuth - Authentication client for KrutAI
- * 
+ *
  * This class wraps Better Auth and adds API key validation
  * to ensure only authorized users can access authentication features.
- * 
+ *
  * @example
  * ```typescript
  * import { KrutAuth } from '@krutai/auth';
- * 
+ *
  * const auth = new KrutAuth({
  *   apiKey: 'your-api-key-here',
  *   betterAuthOptions: {
  *     // Better Auth configuration
  *   }
  * });
- * 
+ *
  * // Initialize the client (validates API key)
  * await auth.initialize();
- * 
+ *
  * // Use authentication features
  * const betterAuth = auth.getBetterAuth();
  * ```
@@ -77,7 +77,6 @@ export class KrutAuth {
     private initializeBetterAuth(): void {
         this.betterAuthInstance = betterAuth({
             ...this.config.betterAuthOptions,
-            // Add any custom configuration here
         });
     }
 
@@ -116,8 +115,6 @@ export class KrutAuth {
      */
     async signIn() {
         const auth = this.getBetterAuth();
-        // Return the Better Auth instance for further operations
-        // Users can call methods on it directly
         return auth;
     }
 

@@ -1,7 +1,7 @@
 {
-    "name": "@krutai/auth",
-    "version": "0.1.2",
-    "description": "Authentication package for KrutAI powered by Better Auth — fully self-contained, no extra installs needed",
+    "name": "@krutai/rbac",
+    "version": "0.1.0",
+    "description": "Role-Based Access Control (RBAC) library for KrutAI",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -10,11 +10,6 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
-        },
-        "./react": {
-            "types": "./dist/react.d.ts",
-            "import": "./dist/react.mjs",
-            "require": "./dist/react.js"
         }
     },
     "files": [
@@ -30,25 +25,33 @@
     },
     "keywords": [
         "krutai",
-        "auth",
-        "authentication",
-        "better-auth"
+        "rbac",
+        "role-based-access-control",
+        "authorization",
+        "permissions",
+        "roles"
     ],
     "author": "",
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^20.11.0",
-        "better-auth": "^1.1.7",
-        "krutai": "^0.1.1",
         "tsup": "^8.0.1",
         "typescript": "^5.3.3"
+    },
+    "peerDependencies": {
+        "@krutai/auth": ">=0.1.0"
+    },
+    "peerDependenciesMeta": {
+        "@krutai/auth": {
+            "optional": true
+        }
     },
     "publishConfig": {
         "access": "public"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AccountantAIOrg/krut_packages.git",
-        "directory": "packages/auth"
+        "url": "https://github.com/AccountantAIOrg/krut_packages.git",
+        "directory": "packages/rbac"
     }
 }
