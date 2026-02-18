@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "Authentication package for KrutAI powered by Better Auth — fully self-contained, no extra installs needed",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -44,11 +44,14 @@
     "dependencies": {
         "better-sqlite3": "^12.0.0"
     },
+    "peerDependencies": {
+        "krutai": ">=0.1.2"
+    },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.0",
         "@types/node": "^20.11.0",
         "better-auth": "^1.1.7",
-        "krutai": "^0.1.1",
+        "krutai": "^0.1.2",
         "tsup": "^8.0.1",
         "typescript": "^5.3.3"
     },

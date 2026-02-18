@@ -9,6 +9,4 @@ export default defineConfig({
     clean: true,
     treeshake: true,
     minify: false,
-    // Bundle krutai if ever imported — keeps @krutai/rbac self-contained
-    noExternal: ['krutai'],
 });

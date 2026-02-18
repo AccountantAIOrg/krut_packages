@@ -1,10 +1,10 @@
 import { betterAuth } from 'better-auth';
 import type { KrutAuthConfig } from './types';
-// Import validation from local bundled validator (no separate krutai package needed)
+// Import validation from krutai peer dependency
 import {
     validateApiKeyFormat,
     validateApiKeyWithService,
-} from './validator';
+} from 'krutai';
 
 /**
  * KrutAuth - Authentication client for KrutAI

@@ -11,7 +11,7 @@ export default defineConfig([
         clean: true,
         treeshake: true,
         minify: false,
-        noExternal: ['better-auth', 'krutai'],
+        noExternal: ['better-auth'],
         external: ['react', 'react-dom', 'next', 'better-sqlite3', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
     },
     // React client bundle

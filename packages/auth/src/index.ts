@@ -1,7 +1,7 @@
 /**
  * @krutai/auth - Authentication package for KrutAI
  *
- * Everything is bundled — no need to separately install `krutai` or `better-auth`.
+ * Requires `krutai` as a peer dependency (installed automatically).
  *
  * @example Server-side (Next.js API route / server component)
  * ```typescript
@@ -30,13 +30,13 @@ export { KrutAuth } from './client';
 // Export types
 export type { KrutAuthConfig, AuthSession, BetterAuthOptions } from './types';
 
-// Export bundled validator utilities (no separate `krutai` install needed)
+// Re-export validator utilities from krutai peer dependency
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
     createApiKeyChecker,
     ApiKeyValidationError,
-} from './validator';
+} from 'krutai';
 
 // Re-export betterAuth for server-side usage
 export { betterAuth } from 'better-auth';

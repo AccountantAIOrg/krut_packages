@@ -58,13 +58,13 @@ export {
     CircularInheritanceError,
 } from './errors.js';
 
-// Bundled validator utilities (no separate `krutai` install needed)
+// Re-export validator utilities from krutai peer dependency
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
     createApiKeyChecker,
     ApiKeyValidationError,
-} from './validator.js';
+} from 'krutai';
 
 // Package metadata
 export const VERSION = '0.1.0';
