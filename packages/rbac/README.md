@@ -14,6 +14,7 @@
 - 🛡️ **Guard helpers** — framework-agnostic guard factories
 - 🔌 **Middleware** — Express / Next.js-compatible middleware factories
 - 🚨 **Descriptive errors** — `PermissionDeniedError`, `RoleNotFoundError`, `CircularInheritanceError`
+- 🔑 **API Key Validation** — re-exported from `krutai` (auto-installed as peer dep)
 
 ---
 
@@ -24,6 +25,8 @@ npm install @krutai/rbac
 # or
 bun add @krutai/rbac
 ```
+
+> **Note:** `krutai` is automatically installed as a peer dependency — no extra steps needed.
 
 ---
 
@@ -189,11 +192,21 @@ try {
   }
 } catch (err) {
   if (err instanceof PermissionDeniedError) {
-    console.error(err.message);  // "Permission denied: "posts:delete" is required..."
+    console.error(err.message);    // "Permission denied: ..."
     console.error(err.permission); // "posts:delete"
     console.error(err.roles);      // ["user"]
   }
 }
+```
+
+---
+
+## API Key Validation
+
+`@krutai/rbac` re-exports the API key validator from `krutai`:
+
+```typescript
+import { validateApiKeyFormat, ApiKeyValidationError } from '@krutai/rbac';
 ```
 
 ---

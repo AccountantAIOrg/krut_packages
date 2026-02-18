@@ -2,9 +2,20 @@
 
 ## Package Overview
 - **Name**: `@krutai/rbac`
+- **Version**: `0.1.1`
 - **Purpose**: Role-Based Access Control (RBAC) library for KrutAI
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
-- **Build**: `tsup` (CJS + ESM dual output)
+- **Build**: `tsup` (CJS + ESM dual output, `krutai` is external peer dep)
+
+## Dependency Architecture
+
+```
+@krutai/rbac@0.1.1
+├── peerDependency: krutai >=0.1.2   ← auto-installed, provides API validation
+└── peerDependency: @krutai/auth >=0.1.0  ← optional
+```
+
+> **Important for AI**: The validator (`validateApiKeyFormat`, `ApiKeyValidationError`, etc.) is NOT defined in this package. It is imported from `krutai` and re-exported. Do NOT add a local `validator.ts` here.
 
 ## File Structure
 ```
@@ -62,6 +73,12 @@ packages/rbac/
 - `RoleNotFoundError(roleName)` — role not in registry
 - `CircularInheritanceError(chain)` — circular role inheritance
 
+### Validator Re-exports (from `krutai`)
+```typescript
+// These are re-exported from krutai — NOT defined here
+export { validateApiKeyFormat, validateApiKeyWithService, createApiKeyChecker, ApiKeyValidationError } from 'krutai';
+```
+
 ## RBACManager API Summary
 
 ```typescript
@@ -101,3 +118,23 @@ Results are cached per role name for performance.
 ## Middleware Contract
 `requirePermission` / `requireRole` expect `req.rbacContext: RBACContext` to be set
 by a preceding auth middleware. Returns 401 if missing, 403 if denied.
+
+## tsup Configuration Notes
+- `krutai` → external (peer dep, NOT bundled — do NOT add to `noExternal`)
+- No other special external/noExternal rules
+
+## Important Notes
+
+1. **Validator lives in `krutai`**: Never add a local `validator.ts` — import from `krutai`
+2. **`krutai` must be external in tsup**: Do NOT add it to `noExternal`
+3. **`krutai` in devDependencies**: Needed for local TypeScript compilation during development
+
+## Related Packages
+
+- `krutai` — Core utilities and API validation (peer dep)
+- `@krutai/auth` — Authentication with Better Auth (optional peer dep)
+
+## Links
+
+- GitHub: https://github.com/AccountantAIOrg/krut_packages
+- npm: https://www.npmjs.com/package/@krutai/rbac

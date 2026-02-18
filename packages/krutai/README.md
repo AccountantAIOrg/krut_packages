@@ -1,6 +1,6 @@
 # krutai
 
-Main KrutAI package with core utilities.
+Core package for the KrutAI ecosystem — provides centralized API key validation, shared types, and utilities used by all `@krutai/*` sub-packages.
 
 ## Installation
 
@@ -8,96 +8,81 @@ Main KrutAI package with core utilities.
 npm install krutai
 ```
 
+> **Note:** You usually don't need to install `krutai` directly. It is automatically installed as a peer dependency when you install any `@krutai/*` package (e.g. `@krutai/auth`, `@krutai/rbac`).
+
 ## Overview
 
-**krutai** is the parent package for the KrutAI ecosystem. It provides:
-- ✅ **Centralized API Key Validation** - All `@krutai/*` packages use krutai's validation
-- ✅ **Core Utilities** - Shared types and utilities for the KrutAI ecosystem
-- ✅ **Zero Dependencies** - Lightweight and fast
+`krutai` is the **single source of truth** for:
 
-All scoped packages (`@krutai/auth`, etc.) depend on `krutai` and automatically install it.
+- ✅ **API Key Validation** — `validateApiKeyFormat`, `validateApiKeyWithService`, `createApiKeyChecker`
+- ✅ **Core Types** — `KrutAIConfig`, `KrutAIMetadata`
+- ✅ **Zero Runtime Dependencies** — Lightweight and fast
 
 ## Usage
 
-### Basic Usage
+### API Key Validation
+
+```typescript
+import {
+    validateApiKeyFormat,
+    validateApiKeyWithService,
+    createApiKeyChecker,
+    ApiKeyValidationError,
+} from 'krutai';
+
+// Format validation (synchronous)
+try {
+    validateApiKeyFormat('my-api-key-123456');
+} catch (error) {
+    if (error instanceof ApiKeyValidationError) {
+        console.error('Invalid format:', error.message);
+    }
+}
+
+// Service validation (async)
+const isValid = await validateApiKeyWithService('my-api-key-123456');
+
+// Cached checker (validates once, caches result)
+const checker = createApiKeyChecker('my-api-key-123456');
+await checker.validate(); // validates + caches
+await checker.validate(); // returns cached result
+checker.reset();          // clear cache
+```
+
+### Package Metadata
 
 ```typescript
 import { VERSION, metadata } from 'krutai';
 
 console.log(`KrutAI v${VERSION}`);
-console.log(metadata);
+console.log(metadata.name, metadata.description);
 ```
 
-### API Key Validation
-
-All `@krutai/*` packages use krutai's centralized API validation:
-
-```typescript
-import { 
-    validateApiKeyFormat, 
-    validateApiKeyWithService,
-    createApiKeyChecker,
-    ApiKeyValidationError 
-} from 'krutai';
-
-// Format validation
-try {
-    validateApiKeyFormat('my-api-key-123456');
-    console.log('Valid API key format');
-} catch (error) {
-    if (error instanceof ApiKeyValidationError) {
-        console.error('Invalid API key:', error.message);
-    }
-}
-
-// Service validation
-const isValid = await validateApiKeyWithService('my-api-key-123456');
-
-// Cached validation
-const checker = createApiKeyChecker('my-api-key-123456');
-await checker.validate(); // Validates and caches result
-await checker.validate(); // Uses cached result
-```
-
-## Architecture
-
-### Parent-Child Dependency Structure
+## Ecosystem
 
 ```
-krutai (parent)
-├── Provides: API validation, core utilities
-├── Dependencies: None
-└── Used by: All @krutai/* packages
-
-@krutai/auth (child)
-├── Depends on: krutai
-├── Uses: krutai's API validation
-└── Provides: Better Auth integration
+krutai (v0.1.2)
+├── API key validation (single source of truth)
+├── Core types & utilities
+└── Auto-installed as peer dep by:
+    ├── @krutai/auth   — Better Auth integration
+    └── @krutai/rbac   — Role-Based Access Control
 ```
-
-**Benefits:**
-- 🎯 **Centralized Validation** - Single source of truth for API key validation
-- 📦 **Automatic Installation** - Installing `@krutai/auth` automatically installs `krutai`
-- 🔄 **No Duplication** - All packages share the same validation logic
-- ✨ **Consistency** - Uniform API key handling across the ecosystem
 
 ## Available Packages
 
-KrutAI is organized as a monorepo with specialized packages:
-
-- **[@krutai/auth](../auth)** - Authentication package powered by [Krut AI](https://www.krut.ai/).
+| Package | Description |
+|---|---|
+| `krutai` | Core utilities, API validation (this package) |
+| `@krutai/auth` | Authentication powered by Better Auth |
+| `@krutai/rbac` | Role-Based Access Control |
 
 ## Development
 
 ```bash
-# Build the package
-npm run build
-
-# Watch mode
-npm run dev
-
-# Type check
-npm run typecheck
+npm run build      # Build the package
+npm run dev        # Watch mode
+npm run typecheck  # Type check
 ```
 
 ## License

@@ -4,9 +4,9 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 
 ## Features
 
-- 🔐 **API Key Protection** — Requires a valid KrutAI API key
+- 🔐 **API Key Protection** — Requires a valid KrutAI API key (validated via `krutai`)
 - 🚀 **Better Auth Integration** — Built on top of Better Auth
-- 📦 **Self-Contained** — No extra installs needed; `better-auth` and `better-sqlite3` are included automatically
+- 📦 **Auto-installs `krutai`** — The core `krutai` package is installed automatically as a peer dependency
 - 🎯 **Next.js Ready** — First-class support via `@krutai/auth/next-js`
 - ⚡ **Dual Format** — Supports both ESM and CommonJS
 - 🔷 **TypeScript First** — Full type safety and IntelliSense
@@ -17,7 +17,7 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 npm install @krutai/auth
 ```
 
-> **Note:** Installing `@krutai/auth` automatically installs `better-sqlite3` (the default database adapter) and bundles `better-auth` — no additional packages required.
+> **Note:** `krutai` is automatically installed as a peer dependency. `better-sqlite3` is included as a dependency and `better-auth` is bundled — no additional packages required.
 
 ## Quick Start
 
@@ -76,7 +76,7 @@ await auth.initialize();
 
 | Import path | What it provides |
 |---|---|
-| `@krutai/auth` | `betterAuth`, `KrutAuth`, validators |
+| `@krutai/auth` | `betterAuth`, `KrutAuth`, validator re-exports from `krutai` |
 | `@krutai/auth/react` | `createAuthClient`, `useSession`, etc. |
 | `@krutai/auth/next-js` | `toNextJsHandler` |
 
@@ -115,9 +115,18 @@ try {
 }
 ```
 
+> `ApiKeyValidationError` is re-exported from `krutai` — the single source of truth for API validation across the KrutAI ecosystem.
+
 ## Architecture
 
-`@krutai/auth` is fully self-contained — `better-auth` is bundled into the output and `better-sqlite3` is auto-installed as a dependency. Each `@krutai/*` sub-library independently includes its own API key validation, so you never need to install the parent `krutai` package separately.
+`@krutai/auth` depends on `krutai` (auto-installed as a peer dependency) for API key validation. `better-auth` is bundled into the output and `better-sqlite3` is auto-installed as a dependency.
+
+```
+@krutai/auth@0.1.4
+├── peerDependency: krutai >=0.1.2   (auto-installed)
+├── dependency:    better-sqlite3
+└── bundled:       better-auth
+```
 
 For Better Auth documentation, visit: https://www.better-auth.com/docs
 
