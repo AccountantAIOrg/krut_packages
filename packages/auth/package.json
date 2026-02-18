@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "Authentication package for KrutAI powered by Better Auth — fully self-contained, no extra installs needed",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -15,6 +15,11 @@
             "types": "./dist/react.d.ts",
             "import": "./dist/react.mjs",
             "require": "./dist/react.js"
+        },
+        "./next-js": {
+            "types": "./dist/next-js.d.ts",
+            "import": "./dist/next-js.mjs",
+            "require": "./dist/next-js.js"
         }
     },
     "files": [
@@ -36,7 +41,11 @@
     ],
     "author": "",
     "license": "MIT",
+    "dependencies": {
+        "better-sqlite3": "^12.0.0"
+    },
     "devDependencies": {
+        "@types/better-sqlite3": "^7.6.0",
         "@types/node": "^20.11.0",
         "better-auth": "^1.1.7",
         "krutai": "^0.1.1",

@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig([
-    // Main index bundle — bundles better-auth server-side code + krutai validator
+    // Main server-side bundle
     {
         entry: { index: 'src/index.ts' },
         format: ['cjs', 'esm'],
@@ -11,12 +11,10 @@ export default defineConfig([
         clean: true,
         treeshake: true,
         minify: false,
-        // Bundle better-auth and krutai into the output
         noExternal: ['better-auth', 'krutai'],
-        // Keep Node.js built-ins and framework peers external
-        external: ['react', 'react-dom', 'next'],
+        external: ['react', 'react-dom', 'next', 'better-sqlite3', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
     },
-    // React client bundle — bundles better-auth/react, keeps react external (peer dep)
+    // React client bundle
     {
         entry: { react: 'src/react.ts' },
         format: ['cjs', 'esm'],
@@ -28,5 +26,18 @@ export default defineConfig([
         minify: false,
         noExternal: ['better-auth'],
         external: ['react', 'react-dom', 'next'],
+    },
+    // Next.js handler bundle (toNextJsHandler)
+    {
+        entry: { 'next-js': 'src/next-js.ts' },
+        format: ['cjs', 'esm'],
+        dts: true,
+        splitting: false,
+        sourcemap: true,
+        clean: false,
+        treeshake: true,
+        minify: false,
+        noExternal: ['better-auth'],
+        external: ['react', 'react-dom', 'next', 'better-sqlite3', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
     },
 ]);
