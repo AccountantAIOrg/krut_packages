@@ -1,7 +1,7 @@
 {
-    "name": "@krutai/auth",
-    "version": "0.1.7",
-    "description": "Authentication package for KrutAI — installs krutai, better-auth, and better-sqlite3 automatically",
+    "name": "@krutai/ai-provider",
+    "version": "0.1.0",
+    "description": "AI provider package for KrutAI — wraps @openrouter/sdk with API key validation and a configurable default model",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -10,16 +10,6 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
-        },
-        "./react": {
-            "types": "./dist/react.d.ts",
-            "import": "./dist/react.mjs",
-            "require": "./dist/react.js"
-        },
-        "./next-js": {
-            "types": "./dist/next-js.d.ts",
-            "import": "./dist/next-js.mjs",
-            "require": "./dist/next-js.js"
         }
     },
     "files": [
@@ -35,17 +25,16 @@
     },
     "keywords": [
         "krutai",
-        "auth",
-        "authentication",
-        "better-auth"
+        "ai",
+        "openrouter",
+        "llm",
+        "ai-provider"
     ],
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "better-auth": "^1.1.7",
-        "better-sqlite3": "^12.0.0",
-        "@types/better-sqlite3": "^7.6.0",
-        "krutai": "^0.1.2"
+        "@openrouter/sdk": "^0.8.0",
+        "krutai": ">=0.1.2"
     },
     "peerDependencies": {
         "krutai": ">=0.1.2"
@@ -61,6 +50,6 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AccountantAIOrg/krut_packages.git",
-        "directory": "packages/auth"
+        "directory": "packages/ai-provider"
     }
 }

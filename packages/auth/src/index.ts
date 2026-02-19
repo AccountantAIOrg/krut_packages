@@ -5,9 +5,13 @@
  *
  * @example Server-side (Next.js API route / server component)
  * ```typescript
- * import { betterAuth } from "@krutai/auth";
+ * import { krutAuth } from "@krutai/auth";
+ * import Database from "better-sqlite3";
  *
- * export const auth = betterAuth({ ... });
+ * export const auth = krutAuth({
+ *   database: new Database("./sqlite.db"),
+ *   emailAndPassword: { enabled: true },
+ * });
  * ```
  *
  * @example Client-side (React / Next.js client component)
@@ -24,7 +28,30 @@
  * @packageDocumentation
  */
 
-// Export main client
+import { betterAuth } from 'better-auth';
+import type { BetterAuthOptions } from 'better-auth';
+
+/**
+ * krutAuth — drop-in replacement for betterAuth.
+ *
+ * Use this instead of importing betterAuth directly.
+ *
+ * @example
+ * ```typescript
+ * import { krutAuth } from "@krutai/auth";
+ * import Database from "better-sqlite3";
+ *
+ * export const auth = krutAuth({
+ *   database: new Database("./sqlite.db"),
+ *   emailAndPassword: { enabled: true },
+ * });
+ * ```
+ */
+export function krutAuth(options: BetterAuthOptions) {
+    return betterAuth(options);
+}
+
+// Export main KrutAuth class (API-key-protected wrapper)
 export { KrutAuth } from './client';
 
 // Export types
@@ -38,8 +65,5 @@ export {
     ApiKeyValidationError,
 } from 'krutai';
 
-// Re-export betterAuth for server-side usage
-export { betterAuth } from 'better-auth';
-
 // Package metadata
-export const VERSION = '0.1.2';
+export const VERSION = '0.1.7';

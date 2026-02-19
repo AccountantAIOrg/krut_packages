@@ -6,7 +6,7 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 
 - 🔐 **API Key Protection** — Requires a valid KrutAI API key (validated via `krutai`)
 - 🚀 **Better Auth Integration** — Built on top of Better Auth
-- 📦 **Auto-installs `krutai`** — The core `krutai` package is installed automatically as a peer dependency
+- 📦 **Auto-installs everything** — `krutai`, `better-auth`, `better-sqlite3` install automatically
 - 🎯 **Next.js Ready** — First-class support via `@krutai/auth/next-js`
 - ⚡ **Dual Format** — Supports both ESM and CommonJS
 - 🔷 **TypeScript First** — Full type safety and IntelliSense
@@ -17,7 +17,7 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 npm install @krutai/auth
 ```
 
-> **Note:** `krutai` is automatically installed as a peer dependency. `better-sqlite3` is included as a dependency and `better-auth` is bundled — no additional packages required.
+> **Note:** `krutai`, `better-auth`, `better-sqlite3`, and `@types/better-sqlite3` are all installed automatically.
 
 ## Quick Start
 
@@ -25,11 +25,21 @@ npm install @krutai/auth
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "@krutai/auth";
+import { krutAuth } from "@krutai/auth";
+import Database from "better-sqlite3";
 
-export const auth = betterAuth({
-  database: {
-    // your database config
+export const auth = krutAuth({
+  database: new Database("./sqlite.db"),
+  emailAndPassword: {
+    enabled: true,
+  },
+  user: {
+    additionalFields: {
+      name: {
+        type: "string",
+        required: true,
+      },
+    },
   },
 });
 ```
@@ -57,7 +67,7 @@ export const authClient = createAuthClient({
 export const { signIn, signUp, signOut, useSession } = authClient;
 ```
 
-### With API Key Validation
+### With API Key Validation (KrutAuth class)
 
 ```typescript
 import { KrutAuth } from "@krutai/auth";
@@ -76,22 +86,31 @@ await auth.initialize();
 
 | Import path | What it provides |
 |---|---|
-| `@krutai/auth` | `betterAuth`, `KrutAuth`, validator re-exports from `krutai` |
+| `@krutai/auth` | `krutAuth`, `KrutAuth`, validators |
 | `@krutai/auth/react` | `createAuthClient`, `useSession`, etc. |
 | `@krutai/auth/next-js` | `toNextJsHandler` |
 
 ## API Reference
 
-### `KrutAuth`
+### `krutAuth(options)`
 
-#### Constructor options
+Drop-in replacement for `betterAuth`. Accepts the same options.
+
+```typescript
+import { krutAuth } from "@krutai/auth";
+
+export const auth = krutAuth({ /* Better Auth options */ });
+```
+
+### `KrutAuth` class
+
+For API-key-protected authentication.
 
 | Option | Type | Required | Description |
 |---|---|---|---|
 | `apiKey` | `string` | ✅ | Your KrutAI API key |
 | `betterAuthOptions` | `object` | — | Better Auth configuration |
 | `validateOnInit` | `boolean` | — | Validate API key on init (default: `true`) |
-| `validationEndpoint` | `string` | — | Custom validation endpoint |
 
 #### Methods
 
@@ -115,17 +134,14 @@ try {
 }
 ```
 
-> `ApiKeyValidationError` is re-exported from `krutai` — the single source of truth for API validation across the KrutAI ecosystem.
-
 ## Architecture
 
-`@krutai/auth` depends on `krutai` (auto-installed as a peer dependency) for API key validation. `better-auth` is bundled into the output and `better-sqlite3` is auto-installed as a dependency.
-
 ```
-@krutai/auth@0.1.4
-├── peerDependency: krutai >=0.1.2   (auto-installed)
-├── dependency:    better-sqlite3
-└── bundled:       better-auth
+@krutai/auth@0.1.7
+├── dependency: krutai          ← API key validation
+├── dependency: better-auth     ← auth engine
+├── dependency: better-sqlite3  ← default database adapter
+└── dependency: @types/better-sqlite3
 ```
 
 For Better Auth documentation, visit: https://www.better-auth.com/docs

@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import type { Auth } from 'better-auth';
 import type { KrutAuthConfig } from './types';
 // Import validation from krutai peer dependency
 import {
@@ -32,7 +33,7 @@ import {
  */
 export class KrutAuth {
     private apiKey: string;
-    private betterAuthInstance: ReturnType<typeof betterAuth> | null = null;
+    private betterAuthInstance: Auth | null = null;
     private initialized = false;
 
     /**
@@ -84,7 +85,7 @@ export class KrutAuth {
      * Get the Better Auth instance
      * @throws {Error} If not initialized
      */
-    getBetterAuth(): ReturnType<typeof betterAuth> {
+    getBetterAuth(): Auth {
         if (!this.betterAuthInstance) {
             throw new Error(
                 'KrutAuth not initialized. Call initialize() first or set validateOnInit to false.'
@@ -113,26 +114,23 @@ export class KrutAuth {
      * This is a convenience method that wraps Better Auth
      * You can access the full Better Auth API via getBetterAuth()
      */
-    async signIn() {
-        const auth = this.getBetterAuth();
-        return auth;
+    async signIn(): Promise<Auth> {
+        return this.getBetterAuth();
     }
 
     /**
      * Sign out the current user
      * You can access the full Better Auth API via getBetterAuth()
      */
-    async signOut() {
-        const auth = this.getBetterAuth();
-        return auth;
+    async signOut(): Promise<Auth> {
+        return this.getBetterAuth();
     }
 
     /**
      * Get the current session
      * You can access the full Better Auth API via getBetterAuth()
      */
-    async getSession() {
-        const auth = this.getBetterAuth();
-        return auth;
+    async getSession(): Promise<Auth> {
+        return this.getBetterAuth();
     }
 }

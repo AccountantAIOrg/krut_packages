@@ -11,8 +11,9 @@ export default defineConfig([
         clean: true,
         treeshake: true,
         minify: false,
-        noExternal: ['better-auth'],
-        external: ['react', 'react-dom', 'next', 'better-sqlite3', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
+        // better-auth, krutai, better-sqlite3 are real dependencies — keep them external
+        // so consumers get proper types and tree-shaking
+        external: ['react', 'react-dom', 'next', 'better-sqlite3', 'better-auth', 'krutai', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
     },
     // React client bundle
     {
@@ -24,8 +25,7 @@ export default defineConfig([
         clean: false,
         treeshake: true,
         minify: false,
-        noExternal: ['better-auth'],
-        external: ['react', 'react-dom', 'next'],
+        external: ['react', 'react-dom', 'next', 'better-auth'],
     },
     // Next.js handler bundle (toNextJsHandler)
     {
@@ -37,7 +37,6 @@ export default defineConfig([
         clean: false,
         treeshake: true,
         minify: false,
-        noExternal: ['better-auth'],
-        external: ['react', 'react-dom', 'next', 'better-sqlite3', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
+        external: ['react', 'react-dom', 'next', 'better-sqlite3', 'better-auth', '@prisma/client', 'drizzle-orm', 'mysql2', 'pg', 'mongodb'],
     },
 ]);
