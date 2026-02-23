@@ -10,7 +10,7 @@ export default defineConfig([
         clean: true,
         treeshake: true,
         minify: false,
-        // @openrouter/sdk, ai, and krutai are real dependencies — keep them external
-        external: ['@openrouter/sdk', 'krutai'],
+        // krutai is a peer dep — keep it external. No other external deps needed.
+        external: ['krutai'],
     },
 ]);

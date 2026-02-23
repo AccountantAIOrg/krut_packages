@@ -7,6 +7,7 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 - 🔐 **API Key Protection** — Requires a valid KrutAI API key (validated via `krutai`)
 - 🚀 **Better Auth Integration** — Built on top of Better Auth
 - 📦 **Auto-installs everything** — `krutai`, `better-auth`, `better-sqlite3` install automatically
+- 🗄️ **Auto-migrates SQLite** — Database tables are created automatically on install
 - 🎯 **Next.js Ready** — First-class support via `@krutai/auth/next-js`
 - ⚡ **Dual Format** — Supports both ESM and CommonJS
 - 🔷 **TypeScript First** — Full type safety and IntelliSense
@@ -17,7 +18,7 @@ Authentication package for KrutAI powered by [Better Auth](https://www.better-au
 npm install @krutai/auth
 ```
 
-> **Note:** `krutai`, `better-auth`, `better-sqlite3`, and `@types/better-sqlite3` are all installed automatically.
+> **Note:** `krutai`, `better-auth`, `better-sqlite3`, and `@types/better-sqlite3` are all installed automatically. SQLite tables are migrated automatically after install.
 
 ## Quick Start
 
@@ -33,16 +34,11 @@ export const auth = krutAuth({
   emailAndPassword: {
     enabled: true,
   },
-  user: {
-    additionalFields: {
-      name: {
-        type: "string",
-        required: true,
-      },
-    },
-  },
+  baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000",
 });
 ```
+
+> **Required:** Set `BETTER_AUTH_BASE_URL` in your `.env` file (e.g. `http://localhost:3000` for dev, `https://yourdomain.com` for production). Without this, redirects and callbacks will not work.
 
 ### API Route handler
 
@@ -81,6 +77,13 @@ const auth = new KrutAuth({
 
 await auth.initialize();
 ```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `BETTER_AUTH_BASE_URL` | ✅ | Your app's base URL (e.g. `http://localhost:3000`) |
+| `BETTER_AUTH_SECRET` | recommended | Secret for signing sessions |
 
 ## Exports
 
@@ -137,7 +140,7 @@ try {
 ## Architecture
 
 ```
-@krutai/auth@0.1.7
+@krutai/auth@0.1.9
 ├── dependency: krutai          ← API key validation
 ├── dependency: better-auth     ← auth engine
 ├── dependency: better-sqlite3  ← default database adapter

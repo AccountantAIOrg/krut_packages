@@ -11,6 +11,7 @@
  * export const auth = krutAuth({
  *   database: new Database("./sqlite.db"),
  *   emailAndPassword: { enabled: true },
+ *   baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000",
  * });
  * ```
  *
@@ -57,13 +58,12 @@ export { KrutAuth } from './client';
 // Export types
 export type { KrutAuthConfig, AuthSession, BetterAuthOptions } from './types';
 
-// Re-export validator utilities from krutai peer dependency
+// Re-export minimal validator utilities (format/length check only)
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
-    createApiKeyChecker,
     ApiKeyValidationError,
 } from 'krutai';
 
 // Package metadata
-export const VERSION = '0.1.7';
+export const VERSION = '0.1.9';

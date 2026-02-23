@@ -3,20 +3,25 @@
 ## Package Overview
 
 - **Name**: `@krutai/ai-provider`
-- **Version**: `0.1.0`
-- **Purpose**: AI provider for KrutAI — wraps `@openrouter/sdk` with a `krutAI()` factory, key validation, and a configurable default model
+- **Version**: `0.2.0`
+- **Purpose**: AI provider for KrutAI — fetch-based client for your deployed LangChain server with API key validation
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
-- **Build**: `tsup` (CJS + ESM, all deps external)
+- **Build**: `tsup` (CJS + ESM, no external SDK deps)
 
-## Dependency Architecture
+## Architecture
 
 ```
-@krutai/ai-provider@0.1.0
-├── dependency: @openrouter/sdk  ← Official OpenRouter TypeScript SDK (external in tsup)
-└── peerDep:    krutai           ← Core utilities
-```
+@krutai/ai-provider@0.2.0
+ └── peerDep: krutai  (core utilities)
 
-> **Important for AI**: Do NOT bundle `@openrouter/sdk` inline. It must stay external in tsup.
+AI Flow:
+  User App → krutAI() / KrutAIProvider
+           → POST {serverUrl}/validate   (key validation)
+           → POST {serverUrl}/generate   (single response)
+           → POST {serverUrl}/stream     (SSE streaming)
+           → POST {serverUrl}/chat       (multi-turn)
+           → Your deployed LangChain server
+```
 
 ## File Structure
 
@@ -24,33 +29,38 @@
 packages/ai-provider/
 ├── src/
 │   ├── index.ts      # krutAI() factory + all exports
-│   ├── client.ts     # KrutAIProvider class
+│   ├── client.ts     # KrutAIProvider class (fetch-based)
 │   ├── types.ts      # KrutAIProviderConfig, GenerateOptions, ChatMessage, DEFAULT_MODEL
-│   └── validator.ts  # OpenRouter key format + service validation
+│   └── validator.ts  # API key format check + server validation
 ├── package.json
 ├── tsconfig.json
 └── tsup.config.ts
 ```
 
-## Default Model
+## Server Endpoints (Expected by This Package)
 
-```
-qwen/qwen3-235b-a22b-thinking-2507
-```
+| Endpoint | Method | Body | Response |
+|---|---|---|---|
+| `/validate` | POST | `{ apiKey }` | `{ valid: true/false, message? }` |
+| `/generate` | POST | `{ prompt, model, system?, maxTokens?, temperature? }` | `{ text/content/message: string }` |
+| `/stream` | POST | `{ prompt, model, system?, maxTokens?, temperature? }` | SSE stream `data: <chunk>` |
+| `/chat` | POST | `{ messages, model, maxTokens?, temperature? }` | `{ text/content/message: string }` |
 
-Exported as `DEFAULT_MODEL` constant. Users override via `config.model` or per-call `options.model`.
+All AI endpoints receive `Authorization: Bearer <apiKey>` and `x-api-key: <apiKey>` headers.
 
 ## Main Exports
 
-### `krutAI(config?)` ← PRIMARY API
-
-Drop-in factory. Mirrors `krutAuth` from `@krutai/auth`.
+### `krutAI(config)` ← PRIMARY API
 
 ```typescript
 import { krutAI } from '@krutai/ai-provider';
 
-const ai = krutAI(); // OPENROUTER_API_KEY from env, default model
-await ai.initialize();
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+  serverUrl: 'https://ai.yourapp.com',
+});
+
+await ai.initialize(); // validates key with server
 
 const text = await ai.generate('Hello!');
 ```
@@ -62,39 +72,21 @@ import { KrutAIProvider } from '@krutai/ai-provider';
 
 const ai = new KrutAIProvider({
   apiKey: process.env.KRUTAI_API_KEY!,
-  openRouterApiKey: process.env.OPENROUTER_API_KEY!,
-  model: 'openai/gpt-4o',       // optional
-  validateOnInit: true,          // default
-  validationEndpoint: undefined, // TODO: wire up POST route
+  serverUrl: 'https://ai.yourapp.com',
+  model: 'gpt-4o',         // optional, default: 'default'
+  validateOnInit: true,     // default: true
 });
 
 await ai.initialize();
 ```
 
 **Methods:**
-- `initialize(): Promise<void>` — validates key + sets up OpenRouter client
+- `initialize(): Promise<void>` — validates key against server, marks provider ready
 - `generate(prompt, opts?): Promise<string>` — single response (non-streaming)
-- `stream(prompt, opts?)` — async iterable of SSE chunks (`chunk.choices[0].delta.content`)
+- `stream(prompt, opts?)` — `AsyncGenerator<string>` — SSE-based streaming
 - `chat(messages, opts?): Promise<string>` — multi-turn conversation
 - `getModel(): string` — active model name
-- `getClient(): OpenRouter` — raw `@openrouter/sdk` client (advanced)
 - `isInitialized(): boolean`
-
-## Underlying SDK Call
-
-The package calls `@openrouter/sdk` using the following structure:
-
-```typescript
-// Non-streaming
-client.chat.send({
-  chatGenerationParams: { model, messages, stream: false, maxTokens?, temperature? }
-});
-
-// Streaming
-client.chat.send({
-  chatGenerationParams: { model, messages, stream: true, maxTokens?, temperature? }
-});
-```
 
 ## Types
 
@@ -102,11 +94,10 @@ client.chat.send({
 
 ```typescript
 interface KrutAIProviderConfig {
-  apiKey: string;                // KrutAI API key (required)
-  openRouterApiKey?: string;     // falls back to process.env.OPENROUTER_API_KEY
-  model?: string;                // default: DEFAULT_MODEL
-  validateOnInit?: boolean;      // default: true
-  validationEndpoint?: string;   // POST URL for key validation (future)
+  apiKey: string;         // KrutAI API key — validated with server (required)
+  serverUrl: string;      // Base URL of deployed LangChain server (required)
+  model?: string;         // default: 'default'
+  validateOnInit?: boolean; // default: true
 }
 ```
 
@@ -132,29 +123,29 @@ interface GenerateOptions {
 
 ## Validator
 
-Defined in `src/validator.ts` (NOT imported from `krutai` — OpenRouter-specific).
+Defined in `src/validator.ts`.
 
 ```typescript
-export { validateOpenRouterKeyFormat, validateOpenRouterKeyWithService, OpenRouterKeyValidationError };
+export { validateApiKey, validateApiKeyFormat, KrutAIKeyValidationError };
 ```
 
 ### Validation Flow
 
-1. **Format check** (sync, on construction): key must start with `sk-or-v1-` and be ≥ 20 chars
-2. **Service check** (async, on `initialize()`): if `validationEndpoint` is set, sends `POST { apiKey }` and checks response; otherwise placeholder returns `true`
+1. **Format check** (sync, on construction): key must be a non-empty string
+2. **Server check** (async, on `initialize()`): sends `POST {serverUrl}/validate` with the key; expects `{ valid: true }`
 
 ## tsup Configuration Notes
 
-- `@openrouter/sdk` → **external** (real dependency, NOT bundled)
-- `krutai` → **external** (peer dep, NOT bundled)
+- Only `krutai` is external (peer dep, NOT bundled)
+- No third-party AI SDK — pure native `fetch`
 
 ## Important Notes
 
-1. **`krutAI()` is the primary API** — prefer it over `new KrutAIProvider()` for simple setups
-2. **Default model is `qwen/qwen3-235b-a22b-thinking-2507`** — override via `config.model` or `opts.model`
-3. **OpenRouter key from env** — set `OPENROUTER_API_KEY` and omit `openRouterApiKey` in config
-4. **Validation endpoint is a placeholder** — wire up the POST route when deployed
-5. **Do NOT bundle `@openrouter/sdk`** — must stay external in tsup
+1. **`serverUrl` is required** — point it at your deployed LangChain backend
+2. **`apiKey` is validated server-side** — the server controls what keys are valid
+3. **Streaming uses SSE** — server must respond with `Content-Type: text/event-stream`
+4. **No external SDK needed** — uses native `fetch` only (Node 18+, browser, edge runtimes)
+5. **Response field fallback** — tries `text → content → message` from server JSON response
 
 ## Related Packages
 
@@ -164,7 +155,5 @@ export { validateOpenRouterKeyFormat, validateOpenRouterKeyWithService, OpenRout
 
 ## Links
 
-- OpenRouter SDK Docs: https://openrouter.ai/docs/sdks/typescript
-- OpenRouter Models: https://openrouter.ai/models
 - GitHub: https://github.com/AccountantAIOrg/krut_packages
 - npm: https://www.npmjs.com/package/@krutai/ai-provider

@@ -1,99 +1,91 @@
 /**
- * OpenRouter API Key Validator
+ * API Key Validator for @krutai/ai-provider
  *
- * Validates the OpenRouter API key format and (optionally) its validity
- * via a configurable POST endpoint.
+ * Validates the KrutAI API key by calling the deployed LangChain server's
+ * validation endpoint. The server is expected to respond with { valid: true }
+ * for a valid key and { valid: false } (or a non-2xx status) for an invalid one.
  *
- * The user will later provide a live POST route; until then the
- * service-level check is a placeholder that accepts any well-formed key.
+ * Validation endpoint called:
+ *   POST {serverUrl}/validate
+ *   Headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }
+ *   Body:    { "apiKey": "<key>" }
+ *   Expected Response: { "valid": true }
  */
 
-export class OpenRouterKeyValidationError extends Error {
+export class KrutAIKeyValidationError extends Error {
     constructor(message: string) {
         super(message);
-        this.name = 'OpenRouterKeyValidationError';
+        this.name = 'KrutAIKeyValidationError';
     }
 }
 
 /**
- * OpenRouter API keys start with "sk-or-v1-"
+ * Basic sanity check — ensures the key is a non-empty string.
+ * @throws {KrutAIKeyValidationError}
  */
-const OPENROUTER_KEY_PREFIX = 'sk-or-v1-';
-const OPENROUTER_KEY_MIN_LENGTH = 20;
-
-/**
- * Validates the format of an OpenRouter API key.
- * @throws {OpenRouterKeyValidationError}
- */
-export function validateOpenRouterKeyFormat(apiKey: string): void {
+export function validateApiKeyFormat(apiKey: string): void {
     if (!apiKey || typeof apiKey !== 'string') {
-        throw new OpenRouterKeyValidationError('OpenRouter API key must be a non-empty string');
+        throw new KrutAIKeyValidationError('API key must be a non-empty string');
     }
-
     if (apiKey.trim().length === 0) {
-        throw new OpenRouterKeyValidationError('OpenRouter API key cannot be empty or whitespace');
-    }
-
-    if (!apiKey.startsWith(OPENROUTER_KEY_PREFIX)) {
-        throw new OpenRouterKeyValidationError(
-            `OpenRouter API key must start with "${OPENROUTER_KEY_PREFIX}"`
-        );
-    }
-
-    if (apiKey.length < OPENROUTER_KEY_MIN_LENGTH) {
-        throw new OpenRouterKeyValidationError(
-            `OpenRouter API key must be at least ${OPENROUTER_KEY_MIN_LENGTH} characters long`
-        );
+        throw new KrutAIKeyValidationError('API key cannot be empty or whitespace');
     }
 }
 
 /**
- * Validates the OpenRouter API key with the KrutAI validation service.
+ * Validates the API key against the deployed LangChain server.
  *
- * The user will provide a live POST route later. Until then this is a
- * placeholder that accepts any key that passes format validation.
+ * Sends a POST request to `{serverUrl}/validate` and expects:
+ *   - HTTP 2xx status
+ *   - JSON body: `{ "valid": true }`
  *
- * @param apiKey - OpenRouter API key to validate
- * @param validationEndpoint - Optional POST URL to validate against
+ * @param apiKey   - The API key to validate
+ * @param serverUrl - Base URL of the LangChain backend (e.g. "https://ai.yourapp.com")
+ * @throws {KrutAIKeyValidationError}
  */
-export async function validateOpenRouterKeyWithService(
+export async function validateApiKey(
     apiKey: string,
-    validationEndpoint?: string
+    serverUrl: string
 ): Promise<boolean> {
-    // Always validate format first
-    validateOpenRouterKeyFormat(apiKey);
+    // Basic format check first
+    validateApiKeyFormat(apiKey);
 
-    if (validationEndpoint) {
-        try {
-            const response = await fetch(validationEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey }),
-            });
+    if (!serverUrl || typeof serverUrl !== 'string' || serverUrl.trim().length === 0) {
+        throw new KrutAIKeyValidationError('serverUrl must be a non-empty string');
+    }
 
-            if (!response.ok) {
-                throw new OpenRouterKeyValidationError(
-                    `OpenRouter API key validation failed: HTTP ${response.status}`
-                );
-            }
+    const url = `${serverUrl.replace(/\/$/, '')}/validate`;
 
-            const data = (await response.json()) as { valid?: boolean };
-            if (data.valid === false) {
-                throw new OpenRouterKeyValidationError(
-                    'OpenRouter API key rejected by validation service'
-                );
-            }
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+            },
+            body: JSON.stringify({ apiKey }),
+        });
 
-            return true;
-        } catch (error) {
-            if (error instanceof OpenRouterKeyValidationError) throw error;
-            throw new OpenRouterKeyValidationError(
-                `Failed to reach validation endpoint: ${error instanceof Error ? error.message : 'Unknown error'}`
+        if (!response.ok) {
+            throw new KrutAIKeyValidationError(
+                `API key validation failed: server responded with HTTP ${response.status}`
             );
         }
-    }
 
-    // TODO: Replace with live endpoint once provided
-    // Placeholder — accepts any correctly-formatted key
-    return true;
+        const data = (await response.json()) as { valid?: boolean; message?: string };
+
+        if (data.valid === false) {
+            throw new KrutAIKeyValidationError(
+                data.message ?? 'API key rejected by server'
+            );
+        }
+
+        return true;
+    } catch (error) {
+        if (error instanceof KrutAIKeyValidationError) throw error;
+        throw new KrutAIKeyValidationError(
+            `Failed to reach validation endpoint at ${url}: ${error instanceof Error ? error.message : 'Unknown error'
+            }`
+        );
+    }
 }

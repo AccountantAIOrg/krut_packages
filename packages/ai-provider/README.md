@@ -1,16 +1,14 @@
 # @krutai/ai-provider
 
-AI Provider package for KrutAI — a thin wrapper around [`@openrouter/sdk`](https://www.npmjs.com/package/@openrouter/sdk), following the same patterns as `@krutai/auth`.
+AI provider package for KrutAI — fetch-based client for your deployed LangChain server.
 
 ## Features
 
-- **Default model**: `qwen/qwen3-235b-a22b-thinking-2507` (change any time)
-- **OpenRouter key validation**: format check (`sk-or-v1-` prefix) on construction, optional service validation
-- **Pluggable validation endpoint**: set your own POST route once it's ready
-- **Text generation & streaming**: `generate()`, `stream()`, and `chat()` built on `@openrouter/sdk`
-- **Mirrors `@krutai/auth` patterns**: `krutAI()` factory + `KrutAIProvider` class
-
----
+- 🔑 **API Key validation** — validates your key against the server before use
+- 🚀 **Zero SDK dependencies** — uses native `fetch` only
+- 📡 **Streaming** — SSE-based streaming via async generator
+- 💬 **Multi-turn chat** — full conversation history support
+- ⚙️ **Configurable** — pass any model name to the server
 
 ## Installation
 
@@ -18,146 +16,137 @@ AI Provider package for KrutAI — a thin wrapper around [`@openrouter/sdk`](htt
 npm install @krutai/ai-provider
 ```
 
----
-
 ## Quick Start
-
-### Simplest usage (no setup needed)
-
-The OpenRouter API key is built-in by default — just install and call:
 
 ```typescript
 import { krutAI } from '@krutai/ai-provider';
 
-const ai = krutAI();
-await ai.initialize();
+const ai = krutAI({
+  apiKey: 'your-krutai-api-key',
+  serverUrl: 'https://ai.yourapp.com', // your deployed LangChain server
+});
 
-const text = await ai.generate('Write a haiku about coding');
+await ai.initialize(); // validates key with your server
+
+// Single response
+const text = await ai.generate('Write a poem about TypeScript');
 console.log(text);
 ```
 
-> **Note:** The built-in key is temporary. It will be removed once the validation endpoint is live, at which point you will need to provide your own key via `OPENROUTER_API_KEY` env var or `openRouterApiKey` config.
+## Usage
 
-### Change the model
+### Generate (single response)
 
 ```typescript
-const ai = krutAI({ model: 'openai/gpt-4o-mini' });
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+  serverUrl: 'https://ai.yourapp.com',
+  model: 'gpt-4o', // optional — server's default is used if omitted
+});
+
 await ai.initialize();
 
-const text = await ai.generate('Hello!');
+const text = await ai.generate('Explain async/await in JavaScript', {
+  system: 'You are a helpful coding tutor.',
+  maxTokens: 500,
+  temperature: 0.7,
+});
+
+console.log(text);
 ```
 
 ### Streaming
 
 ```typescript
-const ai = krutAI();
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+  serverUrl: 'https://ai.yourapp.com',
+});
+
 await ai.initialize();
 
-const stream = await ai.stream('Tell me a story');
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices?.[0]?.delta?.content ?? '');
+// stream() is an async generator
+for await (const chunk of ai.stream('Tell me a short story')) {
+  process.stdout.write(chunk);
 }
 ```
 
-### Multi-turn conversation
+### Multi-turn Chat
 
 ```typescript
-const reply = await ai.chat([
-  { role: 'user', content: 'Hi!' },
-  { role: 'assistant', content: 'Hello! How can I help?' },
-  { role: 'user', content: 'What is TypeScript?' },
-]);
-```
-
-### Override model per call
-
-```typescript
-const text = await ai.generate('Summarise this', {
-  model: 'anthropic/claude-3.5-sonnet',
-  maxTokens: 512,
-  temperature: 0.7,
-});
-```
-
-### Using the class directly
-
-```typescript
-import { KrutAIProvider } from '@krutai/ai-provider';
-
-const ai = new KrutAIProvider({
+const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
-  openRouterApiKey: process.env.OPENROUTER_API_KEY!,
-  model: 'google/gemini-flash-1.5',  // optional override
-  validateOnInit: true,               // default
+  serverUrl: 'https://ai.yourapp.com',
 });
 
 await ai.initialize();
-const text = await ai.generate('Hi!');
+
+const response = await ai.chat([
+  { role: 'system', content: 'You are a helpful assistant.' },
+  { role: 'user', content: 'What is the capital of France?' },
+  { role: 'assistant', content: 'Paris.' },
+  { role: 'user', content: 'What is it famous for?' },
+]);
+
+console.log(response);
 ```
 
----
+### Skip validation (useful for tests)
+
+```typescript
+const ai = krutAI({
+  apiKey: 'test-key',
+  serverUrl: 'http://localhost:3000',
+  validateOnInit: false, // skips the /validate round-trip
+});
+
+// No need to call initialize() when validateOnInit is false
+const text = await ai.generate('Hello!');
+```
+
+## Server API Contract
+
+Your LangChain server must expose these endpoints:
+
+| Endpoint | Method | Auth | Body |
+|---|---|---|---|
+| `/validate` | POST | `x-api-key` header | `{ "apiKey": "..." }` |
+| `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "model": "...", ... }` |
+| `/stream` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "model": "...", ... }` |
+| `/chat` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
+
+**Validation response:** `{ "valid": true }` or `{ "valid": false, "message": "reason" }`
+
+**AI response:** `{ "text": "..." }` or `{ "content": "..." }` or `{ "message": "..." }`
+
+**Stream:** `text/event-stream` with `data: <chunk>` lines, ending with `data: [DONE]`
 
 ## API Reference
 
-### `krutAI(config?)` — factory function
+### `krutAI(config)`
 
-| Field | Type | Default |
-|---|---|---|
-| `openRouterApiKey` | `string` | `process.env.OPENROUTER_API_KEY` |
-| `model` | `string` | `"qwen/qwen3-235b-a22b-thinking-2507"` |
-| `validateOnInit` | `boolean` | `true` |
-| `validationEndpoint` | `string` | `undefined` (placeholder) |
+Factory function — preferred way to create a provider.
 
-### `KrutAIProvider` class
-
-| Method | Returns | Description |
-|---|---|---|
-| `initialize()` | `Promise<void>` | Validates key + sets up OpenRouter client |
-| `generate(prompt, opts?)` | `Promise<string>` | Single response |
-| `stream(prompt, opts?)` | async iterable | Streaming response |
-| `chat(messages, opts?)` | `Promise<string>` | Multi-turn conversation |
-| `getModel()` | `string` | Active model name |
-| `getClient()` | `OpenRouter` | Raw `@openrouter/sdk` client (advanced) |
-| `isInitialized()` | `boolean` | Ready check |
-
----
-
-## Default Model
-
-```
-qwen/qwen3-235b-a22b-thinking-2507
+```typescript
+const ai = krutAI({
+  apiKey: string;      // required
+  serverUrl: string;   // required — base URL of your LangChain server
+  model?: string;      // optional — passed to server (default: 'default')
+  validateOnInit?: boolean; // optional — default: true
+});
 ```
 
-Pass `model` in the constructor or per-call to override.  
-Browse all available models at https://openrouter.ai/models.
+### `KrutAIProvider`
 
----
+Full class API with the same methods as above. Use when you need the class directly.
 
-## Validation
+### Exports
 
-The OpenRouter key is validated for format (`sk-or-v1-` prefix) on construction.
-
-When a `validationEndpoint` is provided, `initialize()` sends a `POST` request:
-```json
-{ "apiKey": "sk-or-v1-..." }
+```typescript
+export { krutAI, KrutAIProvider, KrutAIKeyValidationError, validateApiKey, validateApiKeyFormat, DEFAULT_MODEL };
+export type { KrutAIProviderConfig, GenerateOptions, ChatMessage };
 ```
-Expected response: `{ "valid": true }` (or any `2xx` without `valid: false`).
 
-> The live endpoint will be wired in once you deploy the POST route.
+## License
 
----
-
-## Related Packages
-
-- [`krutai`](https://www.npmjs.com/package/krutai) — Core utilities & API validation
-- [`@krutai/auth`](https://www.npmjs.com/package/@krutai/auth) — Authentication (wraps better-auth)
-- [`@krutai/rbac`](https://www.npmjs.com/package/@krutai/rbac) — Role-Based Access Control
-
----
-
-## Links
-
-- OpenRouter SDK: https://openrouter.ai/docs/sdks/typescript
-- Available Models: https://openrouter.ai/models
-- GitHub: https://github.com/AccountantAIOrg/krut_packages
-- npm: https://www.npmjs.com/package/@krutai/ai-provider
+MIT

@@ -1,7 +1,7 @@
 {
     "name": "@krutai/ai-provider",
-    "version": "0.1.0",
-    "description": "AI provider package for KrutAI — wraps @openrouter/sdk with API key validation and a configurable default model",
+    "version": "0.2.0",
+    "description": "AI provider package for KrutAI — fetch-based client for your deployed LangChain server with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -26,14 +26,14 @@
     "keywords": [
         "krutai",
         "ai",
-        "openrouter",
+        "langchain",
         "llm",
-        "ai-provider"
+        "ai-provider",
+        "fetch"
     ],
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "@openrouter/sdk": "^0.8.0",
         "krutai": ">=0.1.2"
     },
     "peerDependencies": {
