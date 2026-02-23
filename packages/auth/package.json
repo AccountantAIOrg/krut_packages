@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.1.9",
+    "version": "0.2.0",
     "description": "Authentication package for KrutAI — installs krutai, better-auth, and better-sqlite3 automatically",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
