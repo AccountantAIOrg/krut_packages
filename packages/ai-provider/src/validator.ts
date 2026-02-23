@@ -40,7 +40,7 @@ export function validateApiKeyFormat(apiKey: string): void {
  *   - JSON body: `{ "valid": true }`
  *
  * @param apiKey   - The API key to validate
- * @param serverUrl - Base URL of the LangChain backend (e.g. "https://ai.yourapp.com")
+ * @param serverUrl - Base URL of the LangChain backend (e.g. "https://krut.ai")
  * @throws {KrutAIKeyValidationError}
  */
 export async function validateApiKey(

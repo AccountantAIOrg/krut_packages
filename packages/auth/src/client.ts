@@ -42,9 +42,10 @@ export class KrutAuth {
      * @throws {ApiKeyValidationError} If API key is invalid
      */
     constructor(private config: KrutAuthConfig) {
+        const key = config.apiKey || process.env.KRUTAI_API_KEY || '';
         // Validate API key format immediately
-        validateApiKeyFormat(config.apiKey);
-        this.apiKey = config.apiKey;
+        validateApiKeyFormat(key);
+        this.apiKey = key;
 
         // Initialize if validation is not required on init
         if (config.validateOnInit === false) {
@@ -64,7 +65,7 @@ export class KrutAuth {
 
         // Validate API key with service if needed
         if (this.config.validateOnInit !== false) {
-            await validateApiKeyWithService(this.apiKey);
+            await validateApiKeyWithService(this.apiKey, this.config.serverUrl);
         }
 
         this.initializeBetterAuth();

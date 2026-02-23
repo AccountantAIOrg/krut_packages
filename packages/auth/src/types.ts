@@ -6,9 +6,9 @@ import type { BetterAuthOptions } from 'better-auth';
 export interface KrutAuthConfig {
     /**
      * API key for authentication with KrutAI services
-     * @required
+     * Optional: defaults to process.env.KRUTAI_API_KEY
      */
-    apiKey: string;
+    apiKey?: string;
 
     /**
      * Better Auth configuration options
@@ -21,6 +21,12 @@ export interface KrutAuthConfig {
      * @default true
      */
     validateOnInit?: boolean;
+
+    /**
+     * Base URL of your deployed LangChain backend/validation server
+     * @default "http://localhost:8000"
+     */
+    serverUrl?: string;
 
     /**
      * Custom API validation endpoint

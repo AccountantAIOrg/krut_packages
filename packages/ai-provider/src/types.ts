@@ -21,9 +21,9 @@ export interface KrutAIProviderConfig {
     /**
      * KrutAI API key.
      * Validated against the LangChain server before use.
-     * @required
+     * Optional: defaults to process.env.KRUTAI_API_KEY
      */
-    apiKey: string;
+    apiKey?: string;
 
     /**
      * Base URL of your deployed LangChain backend server.

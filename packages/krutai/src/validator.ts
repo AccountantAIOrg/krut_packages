@@ -16,62 +16,82 @@ export class ApiKeyValidationError extends Error {
 
 /**
  * Validates the format of an API key
- * @param apiKey - The API key to validate
+ * @param apiKey - The API key to validate (defaults to process.env.KRUTAI_API_KEY)
  * @throws {ApiKeyValidationError} If the API key format is invalid
  */
-export function validateApiKeyFormat(apiKey: string): void {
-    if (!apiKey || typeof apiKey !== 'string') {
+export function validateApiKeyFormat(apiKey?: string): void {
+    const key = apiKey || process.env.KRUTAI_API_KEY;
+
+    if (!key || typeof key !== 'string') {
         throw new ApiKeyValidationError('API key must be a non-empty string');
     }
 
-    if (apiKey.trim().length === 0) {
+    if (key.trim().length === 0) {
         throw new ApiKeyValidationError('API key cannot be empty or whitespace');
     }
 
     // Add additional format validation as needed
     // Example: Check for minimum length, allowed characters, etc.
-    if (apiKey.length < 10) {
+    if (key.length < 10) {
         throw new ApiKeyValidationError('API key must be at least 10 characters long');
     }
 }
 
 /**
- * Validates an API key with the KrutAI service
- * @param apiKey - The API key to validate
+ * Validates an API key with the KrutAI validation service
+ * @param apiKey - The API key to validate (defaults to process.env.KRUTAI_API_KEY)
+ * @param serverUrl - Optional server URL to validate against (defaults to http://localhost:8000)
  * @returns Promise that resolves to true if valid, false otherwise
  */
-export async function validateApiKeyWithService(apiKey: string): Promise<boolean> {
-    // First validate format
-    validateApiKeyFormat(apiKey);
+export async function validateApiKeyWithService(
+    apiKey?: string,
+    serverUrl: string = 'http://localhost:8000'
+): Promise<boolean> {
+    const key = apiKey || process.env.KRUTAI_API_KEY;
+    if (!key) {
+        throw new ApiKeyValidationError('API key is required');
+    }
 
-    // TODO: Implement actual API validation with KrutAI service
-    // For now, this is a placeholder that accepts any properly formatted key
-    // In production, this should make an HTTP request to your validation endpoint
+    // First validate format
+    validateApiKeyFormat(key);
 
     try {
-        // Example implementation:
-        // const response = await fetch('https://api.krutai.com/validate', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ apiKey })
-        // });
-        // return response.ok;
+        const url = `${serverUrl.replace(/\/$/, '')}/validate`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': key,
+            },
+            body: JSON.stringify({ apiKey: key }),
+        });
 
-        // Placeholder: Accept any properly formatted key
+        if (!response.ok) {
+            throw new ApiKeyValidationError(`API key validation failed: server responded with HTTP ${response.status}`);
+        }
+
+        const data = (await response.json()) as { valid?: boolean; message?: string };
+
+        if (data.valid === false) {
+            throw new ApiKeyValidationError(data.message ?? 'API key rejected by server');
+        }
+
         return true;
     } catch (error) {
+        if (error instanceof ApiKeyValidationError) throw error;
         throw new ApiKeyValidationError(
-            `Failed to validate API key: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Failed to reach validation endpoint: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
     }
 }
 
 /**
  * Creates a validated API key checker function
- * @param apiKey - The API key to validate
+ * @param apiKey - The API key to validate (defaults to process.env.KRUTAI_API_KEY)
+ * @param serverUrl - Optional server URL to validate against
  * @returns A function that checks if the API key is valid
  */
-export function createApiKeyChecker(apiKey: string) {
+export function createApiKeyChecker(apiKey?: string, serverUrl?: string) {
     let isValid: boolean | null = null;
     let validationPromise: Promise<boolean> | null = null;
 
@@ -88,7 +108,7 @@ export function createApiKeyChecker(apiKey: string) {
                 return validationPromise;
             }
 
-            validationPromise = validateApiKeyWithService(apiKey);
+            validationPromise = validateApiKeyWithService(apiKey, serverUrl);
             isValid = await validationPromise;
             return isValid;
         },

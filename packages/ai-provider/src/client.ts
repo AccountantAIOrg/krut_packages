@@ -1,10 +1,10 @@
 import type { KrutAIProviderConfig, GenerateOptions, ChatMessage } from './types';
 import { DEFAULT_MODEL, DEFAULT_SERVER_URL } from './types';
 import {
-    validateApiKey,
+    validateApiKeyWithService as validateApiKey,
     validateApiKeyFormat,
-    KrutAIKeyValidationError,
-} from './validator';
+    ApiKeyValidationError as KrutAIKeyValidationError,
+} from 'krutai';
 
 export { KrutAIKeyValidationError };
 
@@ -45,7 +45,7 @@ export class KrutAIProvider {
 
     constructor(config: KrutAIProviderConfig) {
         this.config = config;
-        this.apiKey = config.apiKey;
+        this.apiKey = config.apiKey || process.env.KRUTAI_API_KEY || '';
         this.serverUrl = (config.serverUrl ?? DEFAULT_SERVER_URL).replace(/\/$/, ''); // strip trailing slash
         this.resolvedModel = config.model ?? DEFAULT_MODEL;
 

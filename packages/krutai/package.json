@@ -1,6 +1,6 @@
 {
     "name": "krutai",
-    "version": "0.1.2",
+    "version": "0.1.4",
     "description": "KrutAI - AI-powered utilities and core package",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

@@ -10,7 +10,7 @@
  *
  * const ai = krutAI({
  *   apiKey: process.env.KRUTAI_API_KEY!,
- *   serverUrl: 'https://ai.yourapp.com',
+ *   serverUrl: 'https://krut.ai',
  * });
  *
  * await ai.initialize(); // validates key with server
@@ -23,7 +23,7 @@
  * ```typescript
  * const ai = krutAI({
  *   apiKey: process.env.KRUTAI_API_KEY!,
- *   serverUrl: 'https://ai.yourapp.com',
+ *   serverUrl: 'https://krut.ai',
  *   model: 'gpt-4o',
  * });
  * await ai.initialize();
@@ -34,7 +34,7 @@
  * ```typescript
  * const ai = krutAI({
  *   apiKey: process.env.KRUTAI_API_KEY!,
- *   serverUrl: 'https://ai.yourapp.com',
+ *   serverUrl: 'https://krut.ai',
  * });
  * await ai.initialize();
  *
@@ -53,7 +53,10 @@ import { KrutAIProvider } from './client';
 
 export { KrutAIProvider } from './client';
 export { KrutAIKeyValidationError } from './client';
-export { validateApiKey, validateApiKeyFormat } from './validator';
+export {
+    validateApiKeyWithService as validateApiKey,
+    validateApiKeyFormat,
+} from 'krutai';
 export type { KrutAIProviderConfig, GenerateOptions, ChatMessage } from './types';
 export { DEFAULT_MODEL } from './types';
 
@@ -71,7 +74,7 @@ export { DEFAULT_MODEL } from './types';
  *
  * const ai = krutAI({
  *   apiKey: process.env.KRUTAI_API_KEY!,
- *   serverUrl: 'https://ai.yourapp.com',
+ *   serverUrl: 'https://krut.ai',
  * });
  *
  * await ai.initialize();

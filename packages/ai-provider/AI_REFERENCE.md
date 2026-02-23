@@ -3,7 +3,7 @@
 ## Package Overview
 
 - **Name**: `@krutai/ai-provider`
-- **Version**: `0.2.0`
+- **Version**: `0.2.2`
 - **Purpose**: AI provider for KrutAI — fetch-based client for your deployed LangChain server with API key validation
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
 - **Build**: `tsup` (CJS + ESM, no external SDK deps)
@@ -11,7 +11,7 @@
 ## Architecture
 
 ```
-@krutai/ai-provider@0.2.0
+@krutai/ai-provider@0.2.2
  └── peerDep: krutai  (core utilities)
 
 AI Flow:
@@ -57,7 +57,8 @@ import { krutAI } from '@krutai/ai-provider';
 
 const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'https://ai.yourapp.com',
+  // uses http://localhost:8000 by default for local development
+  // serverUrl: 'https://krut.ai',
 });
 
 await ai.initialize(); // validates key with server
@@ -72,7 +73,7 @@ import { KrutAIProvider } from '@krutai/ai-provider';
 
 const ai = new KrutAIProvider({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'https://ai.yourapp.com',
+  // serverUrl: 'https://krut.ai', // Optional: defaults to localhost:8000
   model: 'gpt-4o',         // optional, default: 'default'
   validateOnInit: true,     // default: true
 });
@@ -95,7 +96,7 @@ await ai.initialize();
 ```typescript
 interface KrutAIProviderConfig {
   apiKey: string;         // KrutAI API key — validated with server (required)
-  serverUrl: string;      // Base URL of deployed LangChain server (required)
+  serverUrl?: string;     // Base URL of deployed LangChain server (default: 'http://localhost:8000')
   model?: string;         // default: 'default'
   validateOnInit?: boolean; // default: true
 }
@@ -141,7 +142,7 @@ export { validateApiKey, validateApiKeyFormat, KrutAIKeyValidationError };
 
 ## Important Notes
 
-1. **`serverUrl` is required** — point it at your deployed LangChain backend
+1. **`serverUrl` defaults to `http://localhost:8000`** — make sure to override this with your deployed LangChain backend in production
 2. **`apiKey` is validated server-side** — the server controls what keys are valid
 3. **Streaming uses SSE** — server must respond with `Content-Type: text/event-stream`
 4. **No external SDK needed** — uses native `fetch` only (Node 18+, browser, edge runtimes)

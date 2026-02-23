@@ -23,7 +23,8 @@ import { krutAI } from '@krutai/ai-provider';
 
 const ai = krutAI({
   apiKey: 'your-krutai-api-key',
-  serverUrl: 'https://ai.yourapp.com', // your deployed LangChain server
+  // Optional: omitted to use the default local dev server ('http://localhost:8000')
+  // serverUrl: 'https://krut.ai',
 });
 
 await ai.initialize(); // validates key with your server
@@ -40,7 +41,7 @@ console.log(text);
 ```typescript
 const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'https://ai.yourapp.com',
+  serverUrl: 'https://krut.ai', // Override default for production
   model: 'gpt-4o', // optional — server's default is used if omitted
 });
 
@@ -60,7 +61,7 @@ console.log(text);
 ```typescript
 const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'https://ai.yourapp.com',
+  // uses http://localhost:8000 by default
 });
 
 await ai.initialize();
@@ -76,7 +77,6 @@ for await (const chunk of ai.stream('Tell me a short story')) {
 ```typescript
 const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'https://ai.yourapp.com',
 });
 
 await ai.initialize();
@@ -129,9 +129,9 @@ Factory function — preferred way to create a provider.
 
 ```typescript
 const ai = krutAI({
-  apiKey: string;      // required
-  serverUrl: string;   // required — base URL of your LangChain server
-  model?: string;      // optional — passed to server (default: 'default')
+  apiKey: string;           // required — KrutAI API key
+  serverUrl?: string;       // optional — defaults to 'http://localhost:8000'
+  model?: string;           // optional — passed to server (default: 'default')
   validateOnInit?: boolean; // optional — default: true
 });
 ```
