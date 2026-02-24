@@ -107,4 +107,9 @@ export interface GenerateOptions {
      * Array of document URLs or base64 data URIs (e.g. PDFs) to include with the request.
      */
     documents?: string[];
+
+    /**
+     * Array of PDF URLs or base64 data URIs to include with the request.
+     */
+    pdf?: string[];
 }

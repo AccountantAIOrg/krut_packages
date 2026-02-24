@@ -1,6 +1,6 @@
 {
     "name": "@krutai/ai-provider",
-    "version": "0.2.11",
+    "version": "0.2.12",
     "description": "AI provider package for KrutAI — fetch-based client for your deployed LangChain server with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -18,6 +18,7 @@
         "AI_REFERENCE.md"
     ],
     "scripts": {
+        "prepack": "npm run build",
         "build": "tsup",
         "dev": "tsup --watch",
         "clean": "rm -rf dist *.tsbuildinfo",
@@ -34,10 +35,10 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "krutai": ">=0.1.6"
+        "krutai": ">=0.1.5"
     },
     "peerDependencies": {
-        "krutai": ">=0.1.6"
+        "krutai": ">=0.1.5"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",

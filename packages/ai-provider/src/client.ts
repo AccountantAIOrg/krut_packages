@@ -137,6 +137,7 @@ export class KrutAIProvider {
                 ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
@@ -196,6 +197,7 @@ export class KrutAIProvider {
                 ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
@@ -282,6 +284,7 @@ export class KrutAIProvider {
                 ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
@@ -296,7 +299,7 @@ export class KrutAIProvider {
             } catch { }
             throw new Error(errorMessage);
         }
-
+        console.log(response)
         return response;
     }
 
@@ -329,6 +332,7 @@ export class KrutAIProvider {
                 ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
@@ -417,6 +421,7 @@ export class KrutAIProvider {
                 ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
@@ -458,6 +463,7 @@ export class KrutAIProvider {
                 model,
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
+                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             }),
