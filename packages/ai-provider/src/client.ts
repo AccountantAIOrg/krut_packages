@@ -114,285 +114,6 @@ export class KrutAIProvider {
     // ---------------------------------------------------------------------------
 
     /**
-     * Generate a response for a prompt (non-streaming).
-     *
-     * Calls: POST {serverUrl}/generate
-     * Body:  { prompt, model, system?, maxTokens?, temperature? }
-     * Expected response: { text: string } or { content: string } or { message: string }
-     *
-     * @param prompt - The user prompt string
-     * @param options - Optional overrides (model, system, maxTokens, temperature)
-     * @returns The assistant's response text
-     */
-    async generate(prompt: string, options: GenerateOptions = {}): Promise<string> {
-        this.assertInitialized();
-        const model = options.model ?? this.resolvedModel;
-
-        const response = await fetch(`${this.serverUrl}/generate`, {
-            method: 'POST',
-            headers: this.authHeaders(),
-            body: JSON.stringify({
-                prompt,
-                model,
-                ...(options.system !== undefined ? { system: options.system } : {}),
-                ...(options.images !== undefined ? { images: options.images } : {}),
-                ...(options.documents !== undefined ? { documents: options.documents } : {}),
-                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
-                ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
-                ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-            }),
-        });
-
-        if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /generate`;
-            try {
-                const errorData = (await response.json()) as { message?: string; error?: string };
-                if (errorData?.error) errorMessage = errorData.error;
-                else if (errorData?.message) errorMessage = errorData.message;
-            } catch { }
-            throw new Error(errorMessage);
-        }
-
-        const data = (await response.json()) as {
-            text?: string;
-            content?: string;
-            message?: string;
-        };
-
-        return data.text ?? data.content ?? data.message ?? '';
-    }
-
-    /**
-     * Generate a streaming response for a prompt via Server-Sent Events (SSE).
-     *
-     * Calls: POST {serverUrl}/stream
-     * Body:  { prompt, model, system?, maxTokens?, temperature? }
-     * Expected response: `text/event-stream` with `data: <chunk>` lines.
-     *
-     * @param prompt - The user prompt string
-     * @param options - Optional overrides (model, system, maxTokens, temperature)
-     * @returns An async generator yielding string chunks from the server
-     *
-     * @example
-     * ```typescript
-     * const stream = ai.stream('Tell me a story');
-     * for await (const chunk of stream) {
-     *   process.stdout.write(chunk);
-     * }
-     * ```
-     */
-    async *stream(prompt: string, options: GenerateOptions = {}): AsyncGenerator<string> {
-        this.assertInitialized();
-        const model = options.model ?? this.resolvedModel;
-
-        const response = await fetch(`${this.serverUrl}/stream`, {
-            method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                Accept: 'text/event-stream',
-            },
-            body: JSON.stringify({
-                prompt,
-                model,
-                ...(options.system !== undefined ? { system: options.system } : {}),
-                ...(options.images !== undefined ? { images: options.images } : {}),
-                ...(options.documents !== undefined ? { documents: options.documents } : {}),
-                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
-                ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
-                ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-            }),
-        });
-
-        if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /stream`;
-            try {
-                const errorData = (await response.json()) as { message?: string; error?: string };
-                if (errorData?.error) errorMessage = errorData.error;
-                else if (errorData?.message) errorMessage = errorData.message;
-            } catch { }
-            throw new Error(errorMessage);
-        }
-
-        if (!response.body) {
-            throw new Error('AI server returned no response body for /stream');
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                // Keep the last (potentially incomplete) line in the buffer
-                buffer = lines.pop() ?? '';
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const raw = line.slice(6).trim();
-                        if (raw === '[DONE]') return;
-                        try {
-                            const parsed = JSON.parse(raw) as {
-                                text?: string;
-                                content?: string;
-                                delta?: { content?: string };
-                            };
-                            const chunk =
-                                parsed.text ??
-                                parsed.content ??
-                                parsed.delta?.content ??
-                                '';
-                            if (chunk) yield chunk;
-                        } catch {
-                            // raw string chunk (non-JSON SSE)
-                            if (raw) yield raw;
-                        }
-                    }
-                }
-            }
-        } finally {
-            reader.releaseLock();
-        }
-    }
-
-    /**
-     * Similar to stream() but returns the raw fetch Response object.
-     * Useful when you want to proxy the Server-Sent Events stream directly to a frontend client
-     * (e.g., returning this directly from a Next.js API route).
-     *
-     * @param prompt - The user prompt string
-     * @param options - Optional overrides (model, system, maxTokens, temperature)
-     * @returns A Promise resolving to the native fetch Response
-     */
-    async streamResponse(prompt: string, options: GenerateOptions = {}): Promise<Response> {
-        this.assertInitialized();
-        const model = options.model ?? this.resolvedModel;
-
-        const response = await fetch(`${this.serverUrl}/stream`, {
-            method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                Accept: 'text/event-stream',
-            },
-            body: JSON.stringify({
-                prompt,
-                model,
-                ...(options.system !== undefined ? { system: options.system } : {}),
-                ...(options.images !== undefined ? { images: options.images } : {}),
-                ...(options.documents !== undefined ? { documents: options.documents } : {}),
-                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
-                ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
-                ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-            }),
-        });
-
-        if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /stream`;
-            try {
-                const errorData = (await response.json()) as { message?: string; error?: string };
-                if (errorData?.error) errorMessage = errorData.error;
-                else if (errorData?.message) errorMessage = errorData.message;
-            } catch { }
-            throw new Error(errorMessage);
-        }
-        console.log(response)
-        return response;
-    }
-
-    /**
-     * Multi-turn conversation streaming: pass a full message history.
-     * Calls POST /stream with the full { messages } payload.
-     *
-     * @param messages - Full conversation history
-     * @param options - Optional overrides (model, maxTokens, temperature)
-     * @returns An async generator yielding string chunks from the server
-     */
-    async *streamChat(messages: ChatMessage[], options: GenerateOptions = {}): AsyncGenerator<string> {
-        this.assertInitialized();
-
-        if (!messages.length) {
-            throw new Error('Messages array cannot be empty for streamChat');
-        }
-
-        const model = options.model ?? this.resolvedModel;
-
-        const response = await fetch(`${this.serverUrl}/stream`, {
-            method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                Accept: 'text/event-stream',
-            },
-            body: JSON.stringify({
-                messages,
-                model,
-                ...(options.system !== undefined ? { system: options.system } : {}),
-                ...(options.images !== undefined ? { images: options.images } : {}),
-                ...(options.documents !== undefined ? { documents: options.documents } : {}),
-                ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
-                ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
-                ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-            }),
-        });
-
-        if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /stream`;
-            try {
-                const errorData = (await response.json()) as { message?: string; error?: string };
-                if (errorData?.error) errorMessage = errorData.error;
-                else if (errorData?.message) errorMessage = errorData.message;
-            } catch { }
-            throw new Error(errorMessage);
-        }
-
-        if (!response.body) {
-            throw new Error('AI server returned no response body for /stream');
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() ?? '';
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const raw = line.slice(6).trim();
-                        if (raw === '[DONE]') return;
-                        try {
-                            const parsed = JSON.parse(raw) as {
-                                text?: string;
-                                content?: string;
-                                delta?: { content?: string };
-                            };
-                            const chunk =
-                                parsed.text ??
-                                parsed.content ??
-                                parsed.delta?.content ??
-                                '';
-                            if (chunk) yield chunk;
-                        } catch {
-                            if (raw) yield raw;
-                        }
-                    }
-                }
-            }
-        } finally {
-            reader.releaseLock();
-        }
-    }
-
-    /**
      * Similar to streamChat() but returns the raw fetch Response object.
      * Useful for proxying the Server-Sent Events stream directly to a frontend client.
      *
@@ -441,26 +162,27 @@ export class KrutAIProvider {
     }
 
     /**
-     * Multi-turn conversation: pass a full message history.
+     * Generate a response for a prompt (non-streaming).
      *
-     * Calls: POST {serverUrl}/chat
-     * Body:  { messages, model, maxTokens?, temperature? }
+     * Calls: POST {serverUrl}/generate
+     * Body:  { prompt, model, system?, maxTokens?, temperature? }
      * Expected response: { text: string } or { content: string } or { message: string }
      *
-     * @param messages - Full conversation history
-     * @param options - Optional overrides (model, maxTokens, temperature)
+     * @param prompt - The user prompt string
+     * @param options - Optional overrides (model, system, maxTokens, temperature)
      * @returns The assistant's response text
      */
-    async chat(messages: ChatMessage[], options: GenerateOptions = {}): Promise<string> {
+    async chat(prompt: string, options: GenerateOptions = {}): Promise<string> {
         this.assertInitialized();
         const model = options.model ?? this.resolvedModel;
 
-        const response = await fetch(`${this.serverUrl}/chat`, {
+        const response = await fetch(`${this.serverUrl}/generate`, {
             method: 'POST',
             headers: this.authHeaders(),
             body: JSON.stringify({
-                messages,
+                prompt,
                 model,
+                ...(options.system !== undefined ? { system: options.system } : {}),
                 ...(options.images !== undefined ? { images: options.images } : {}),
                 ...(options.documents !== undefined ? { documents: options.documents } : {}),
                 ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
@@ -470,7 +192,7 @@ export class KrutAIProvider {
         });
 
         if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /chat`;
+            let errorMessage = `AI server returned HTTP ${response.status} for /generate`;
             try {
                 const errorData = (await response.json()) as { message?: string; error?: string };
                 if (errorData?.error) errorMessage = errorData.error;

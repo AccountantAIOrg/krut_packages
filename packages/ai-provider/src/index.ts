@@ -15,7 +15,7 @@
  *
  * await ai.initialize(); // validates key with server
  *
- * const text = await ai.generate('Write a poem about TypeScript');
+ * const text = await ai.chat('Write a poem about TypeScript');
  * console.log(text);
  * ```
  *
@@ -27,7 +27,7 @@
  *   model: 'gpt-4o',
  * });
  * await ai.initialize();
- * const text = await ai.generate('Hello!');
+ * const text = await ai.chat('Hello!');
  * ```
  *
  * @example Streaming
@@ -38,10 +38,8 @@
  * });
  * await ai.initialize();
  *
- * const stream = ai.stream('Tell me a story');
- * for await (const chunk of stream) {
- *   process.stdout.write(chunk);
- * }
+ * const response = await ai.streamChatResponse([{ role: 'user', content: 'Tell me a story' }]);
+ * // Example assumes you handle the SSE stream from the response body
  * ```
  *
  * @packageDocumentation
@@ -78,7 +76,7 @@ export { DEFAULT_MODEL } from './types';
  * });
  *
  * await ai.initialize();
- * const text = await ai.generate('Hello!');
+ * const text = await ai.chat('Hello!');
  * ```
  */
 export function krutAI(

@@ -1,6 +1,6 @@
 # @krutai/ai-provider
 
-AI provider package for KrutAI — fetch-based client for your deployed LangChain server.
+AI provider package for KrutAI — fetch-based client form our deployed server.
 
 ## Features
 
@@ -30,13 +30,13 @@ const ai = krutAI({
 await ai.initialize(); // validates key with your server
 
 // Single response
-const text = await ai.generate('Write a poem about TypeScript');
+const text = await ai.chat('Write a poem about TypeScript');
 console.log(text);
 ```
 
 ## Usage
 
-### Generate (single response)
+### Chat (single response)
 
 ```typescript
 const ai = krutAI({
@@ -47,7 +47,7 @@ const ai = krutAI({
 
 await ai.initialize();
 
-const text = await ai.generate('Explain async/await in JavaScript', {
+const text = await ai.chat('Explain async/await in JavaScript', {
   system: 'You are a helpful coding tutor.',
   maxTokens: 500,
   temperature: 0.7,
@@ -56,21 +56,6 @@ const text = await ai.generate('Explain async/await in JavaScript', {
 console.log(text);
 ```
 
-### Streaming
-
-```typescript
-const ai = krutAI({
-  apiKey: process.env.KRUTAI_API_KEY!,
-  // uses http://localhost:8000 by default
-});
-
-await ai.initialize();
-
-// stream() is an async generator
-for await (const chunk of ai.stream('Tell me a short story')) {
-  process.stdout.write(chunk);
-}
-```
 
 ### Multi-turn Chat
 
@@ -116,29 +101,11 @@ const response = await ai.chat([
 });
 ```
 
-### Streaming Multi-turn Chat
+### Streaming (Proxying SSE Streams)
 
-```typescript
-const ai = krutAI({
-  apiKey: process.env.KRUTAI_API_KEY!,
-});
+If you are building an API route (e.g., in Next.js) and want to pipe the true Server-Sent Events (SSE) stream down to your backend component, use `streamChatResponse`.
 
-await ai.initialize();
-
-const stream = ai.streamChat([
-  { role: 'user', content: 'What is the capital of France?' },
-  { role: 'assistant', content: 'Paris.' },
-  { role: 'user', content: 'What is it famous for?' },
-]);
-
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
-```
-
-### Proxying Streams to the Frontend (Next.js / API Routes)
-
-If you are building an API route (e.g., in Next.js) and want to pipe the true Server-Sent Events (SSE) stream down to your frontend component, use the `Response` variants:
+`streamChatResponse` returns the raw fetch `Response` object containing the `text/event-stream` body from deployed LangChain server.
 
 ```typescript
 // app/api/chat/route.ts
@@ -148,8 +115,27 @@ export async function POST(req: Request) {
   // Returns the native fetch Response (with text/event-stream headers and body)
   const response = await ai.streamChatResponse(messages);
   
-  // Proxy it directly to the frontend!
+  // Proxy it directly to the backend!
   return response;
+}
+```
+
+If you need to consume the stream in a Node environment rather than proxying it, you can read from the response body directly:
+
+```typescript
+const response = await ai.streamChatResponse([
+  { role: 'user', content: 'Tell me a short story' }
+]);
+
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
+
+if (reader) {
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    process.stdout.write(decoder.decode(value, { stream: true }));
+  }
 }
 ```
 
@@ -163,7 +149,7 @@ const ai = krutAI({
 });
 
 // No need to call initialize() when validateOnInit is false
-const text = await ai.generate('Hello!');
+const text = await ai.chat('Hello!');
 ```
 
 ## Server API Contract
@@ -174,8 +160,7 @@ Your LangChain server must expose these endpoints:
 |---|---|---|---|
 | `/validate` | POST | `x-api-key` header | `{ "apiKey": "..." }` |
 | `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "model": "...", ... }` |
-| `/stream` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "model": "...", ... }` |
-| `/chat` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
+| `/stream` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
 
 **Validation response:** `{ "valid": true }` or `{ "valid": false, "message": "reason" }`
 

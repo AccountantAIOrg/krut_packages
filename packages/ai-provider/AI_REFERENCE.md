@@ -19,7 +19,6 @@ AI Flow:
            → POST {serverUrl}/validate   (key validation)
            → POST {serverUrl}/generate   (single response)
            → POST {serverUrl}/stream     (SSE streaming)
-           → POST {serverUrl}/chat       (multi-turn)
            → Your deployed LangChain server
 ```
 
@@ -43,8 +42,7 @@ packages/ai-provider/
 |---|---|---|---|
 | `/validate` | POST | `{ apiKey }` | `{ valid: true/false, message? }` |
 | `/generate` | POST | `{ prompt, model, system?, maxTokens?, temperature? }` | `{ text/content/message: string }` |
-| `/stream` | POST | `{ prompt, model, system?, maxTokens?, temperature? }` | SSE stream `data: <chunk>` |
-| `/chat` | POST | `{ messages, model, maxTokens?, temperature? }` | `{ text/content/message: string }` |
+| `/stream` | POST | `{ messages, model, system?, maxTokens?, temperature? }` | SSE stream `data: <chunk>` |
 
 All AI endpoints receive `Authorization: Bearer <apiKey>` and `x-api-key: <apiKey>` headers.
 
@@ -62,8 +60,38 @@ const ai = krutAI({
 });
 
 await ai.initialize(); // validates key with server
+```
 
-const text = await ai.generate('Hello!');
+### 1. `chat(prompt: string)` — Simple String Prompts
+Used to get a single, non-streaming text response from a string prompt.
+
+```typescript
+const text = await ai.chat('Write a poem about TypeScript');
+console.log(text);
+```
+
+### 2. `streamChatResponse(messages: ChatMessage[])` — Multi-Turn & Streaming
+Used for multi-turn conversations and streaming responses. It takes an array of `ChatMessage` objects instead of a single string. It returns a raw fetch `Response` containing the `text/event-stream` body.
+
+Ideal for proxying streams (e.g., Next.js API routes) down to your backend component or manually reading the `ReadableStream`.
+
+```typescript
+// Example: Proxying in a Next.js route
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  
+  // ai.streamChatResponse accepts an array of messages:
+  // [{ role: 'user', content: '...' }, ...]
+  return await ai.streamChatResponse(messages);
+}
+
+// Example: Manual Node environment stream reading
+const response = await ai.streamChatResponse([
+  { role: 'system', content: 'You are a helpful assistant.' },
+  { role: 'user', content: 'Tell me a story' }
+]);
+const reader = response.body?.getReader();
+// Use a TextDecoder to parse value chunks...
 ```
 
 ### `KrutAIProvider` class ← FULL CLASS API
@@ -83,12 +111,8 @@ await ai.initialize();
 
 **Methods:**
 - `initialize(): Promise<void>` — validates key against server, marks provider ready
-- `generate(prompt, opts?): Promise<string>` — single response (non-streaming)
-- `stream(prompt, opts?)` — `AsyncGenerator<string>` — SSE-based streaming
-- `streamResponse(prompt, opts?)` — `Promise<Response>` — returns the raw fetch Response for proxying
-- `streamChat(messages, opts?)` — `AsyncGenerator<string>` — SSE multi-turn streaming
-- `streamChatResponse(messages, opts?)` — `Promise<Response>` — returns the raw fetch Response for proxying
-- `chat(messages, opts?): Promise<string>` — multi-turn conversation
+- `chat(prompt, opts?): Promise<string>` — single response (non-streaming)
+- `streamChatResponse(messages, opts?)` — `Promise<Response>` — returns the raw fetch Response for proxying (SSE multi-turn streaming)
 - `getModel(): string` — active model name
 - `isInitialized(): boolean`
 
