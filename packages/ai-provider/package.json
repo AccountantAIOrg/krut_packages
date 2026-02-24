@@ -1,6 +1,6 @@
 {
     "name": "@krutai/ai-provider",
-    "version": "0.2.4",
+    "version": "0.2.11",
     "description": "AI provider package for KrutAI — fetch-based client for your deployed LangChain server with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -34,10 +34,10 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "krutai": ">=0.1.4"
+        "krutai": ">=0.1.6"
     },
     "peerDependencies": {
-        "krutai": ">=0.1.4"
+        "krutai": ">=0.1.6"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",

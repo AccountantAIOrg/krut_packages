@@ -85,6 +85,9 @@ await ai.initialize();
 - `initialize(): Promise<void>` — validates key against server, marks provider ready
 - `generate(prompt, opts?): Promise<string>` — single response (non-streaming)
 - `stream(prompt, opts?)` — `AsyncGenerator<string>` — SSE-based streaming
+- `streamResponse(prompt, opts?)` — `Promise<Response>` — returns the raw fetch Response for proxying
+- `streamChat(messages, opts?)` — `AsyncGenerator<string>` — SSE multi-turn streaming
+- `streamChatResponse(messages, opts?)` — `Promise<Response>` — returns the raw fetch Response for proxying
 - `chat(messages, opts?): Promise<string>` — multi-turn conversation
 - `getModel(): string` — active model name
 - `isInitialized(): boolean`
@@ -102,12 +105,14 @@ interface KrutAIProviderConfig {
 }
 ```
 
-### `ChatMessage`
-
 ```typescript
+type ContentPart = 
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } };
+
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | ContentPart[];
 }
 ```
 

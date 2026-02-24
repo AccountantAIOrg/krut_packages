@@ -66,14 +66,21 @@ export async function validateApiKeyWithService(
             body: JSON.stringify({ apiKey: key }),
         });
 
-        if (!response.ok) {
-            throw new ApiKeyValidationError(`API key validation failed: server responded with HTTP ${response.status}`);
+        let data: { valid?: boolean; message?: string; error?: string } = {};
+        try {
+            data = (await response.json()) as { valid?: boolean; message?: string; error?: string };
+        } catch {
+            // Ignore parsing errors for non-JSON responses
         }
 
-        const data = (await response.json()) as { valid?: boolean; message?: string };
+        if (!response.ok) {
+            throw new ApiKeyValidationError(
+                data.error || data.message || `API key validation failed: server responded with HTTP ${response.status}`
+            );
+        }
 
         if (data.valid === false) {
-            throw new ApiKeyValidationError(data.message ?? 'API key rejected by server');
+            throw new ApiKeyValidationError(data.error ?? data.message ?? 'API key rejected by server');
         }
 
         return true;

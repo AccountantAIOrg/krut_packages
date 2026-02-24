@@ -91,6 +91,62 @@ const response = await ai.chat([
 console.log(response);
 ```
 
+### Multimodal Messages (Images)
+
+For vision-supported models, you can pass an array of `ContentPart`s instead of a flat string:
+
+```typescript
+const response = await ai.chat([
+  {
+    role: 'user',
+    content: [
+      { type: 'text', text: 'Describe this image for me.' },
+      { 
+        type: 'image_url', 
+        image_url: { url: 'https://example.com/logo.png' } 
+      }
+    ]
+  }
+], { model: 'gpt-4o' });
+```
+
+### Streaming Multi-turn Chat
+
+```typescript
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+});
+
+await ai.initialize();
+
+const stream = ai.streamChat([
+  { role: 'user', content: 'What is the capital of France?' },
+  { role: 'assistant', content: 'Paris.' },
+  { role: 'user', content: 'What is it famous for?' },
+]);
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+```
+
+### Proxying Streams to the Frontend (Next.js / API Routes)
+
+If you are building an API route (e.g., in Next.js) and want to pipe the true Server-Sent Events (SSE) stream down to your frontend component, use the `Response` variants:
+
+```typescript
+// app/api/chat/route.ts
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  // Returns the native fetch Response (with text/event-stream headers and body)
+  const response = await ai.streamChatResponse(messages);
+  
+  // Proxy it directly to the frontend!
+  return response;
+}
+```
+
 ### Skip validation (useful for tests)
 
 ```typescript
