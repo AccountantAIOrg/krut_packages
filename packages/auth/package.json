@@ -1,7 +1,7 @@
 {
     "name": "@krutai/auth",
-    "version": "0.2.5",
-    "description": "Authentication package for KrutAI — installs krutai, better-auth, and better-sqlite3 automatically",
+    "version": "0.4.0",
+    "description": "Authentication package for KrutAI — fetch-based client for your server's auth routes with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -10,43 +10,29 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
-        },
-        "./react": {
-            "types": "./dist/react.d.ts",
-            "import": "./dist/react.mjs",
-            "require": "./dist/react.js"
-        },
-        "./next-js": {
-            "types": "./dist/next-js.d.ts",
-            "import": "./dist/next-js.mjs",
-            "require": "./dist/next-js.js"
         }
     },
     "files": [
         "dist",
-        "scripts",
         "README.md",
         "AI_REFERENCE.md"
     ],
     "scripts": {
+        "prepack": "npm run build",
         "build": "tsup",
         "dev": "tsup --watch",
         "clean": "rm -rf dist *.tsbuildinfo",
-        "typecheck": "tsc --noEmit",
-        "postinstall": "node scripts/migrate.js"
+        "typecheck": "tsc --noEmit"
     },
     "keywords": [
         "krutai",
         "auth",
         "authentication",
-        "better-auth"
+        "fetch"
     ],
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "better-auth": "^1.1.7",
-        "better-sqlite3": "^12.0.0",
-        "@types/better-sqlite3": "^7.6.0",
         "krutai": ">=0.1.5"
     },
     "peerDependencies": {

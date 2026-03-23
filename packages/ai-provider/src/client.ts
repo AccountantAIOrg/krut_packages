@@ -170,9 +170,9 @@ export class KrutAIProvider {
      *
      * @param prompt - The user prompt string
      * @param options - Optional overrides (model, system, maxTokens, temperature)
-     * @returns The assistant's response text
+     * @returns The assistant's response text (or an object if structured)
      */
-    async chat(prompt: string, options: GenerateOptions = {}): Promise<string> {
+    async chat<T = any>(prompt: string, options: GenerateOptions = {}): Promise<T> {
         this.assertInitialized();
         const model = options.model ?? this.resolvedModel;
 
@@ -188,6 +188,10 @@ export class KrutAIProvider {
                 ...(options.pdf !== undefined ? { pdf: options.pdf } : {}),
                 ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
                 ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+                ...(options.isStructure !== undefined ? { isStructure: options.isStructure } : {}),
+                ...(options.output_structure !== undefined ? { output_structure: options.output_structure } : {}),
+                ...(options.history !== undefined ? { history: options.history } : {}),
+                ...(options.attachments !== undefined ? { attachments: options.attachments } : {}),
             }),
         });
 
@@ -201,12 +205,14 @@ export class KrutAIProvider {
             throw new Error(errorMessage);
         }
 
-        const data = (await response.json()) as {
-            text?: string;
-            content?: string;
-            message?: string;
-        };
+        const data = (await response.json()) as any;
 
-        return data.text ?? data.content ?? data.message ?? '';
+        // If isStructure was set, return the full object.
+        if (options.isStructure) {
+            return data as T;
+        }
+
+        // Otherwise return text/content/message or empty string
+        return (data.text ?? data.content ?? data.message ?? '') as T;
     }
 }

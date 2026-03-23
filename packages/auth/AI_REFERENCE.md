@@ -3,203 +3,185 @@
 ## Package Overview
 
 - **Name**: `@krutai/auth`
-- **Version**: `0.1.9`
-- **Purpose**: Authentication package for KrutAI — wraps Better Auth with a `krutAuth` function and optional API key validation via `KrutAuth` class
+- **Version**: `0.4.0`
+- **Purpose**: Fetch-based authentication client for KrutAI — calls your server's `/lib-auth` routes (powered by better-auth on the server side)
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
-- **Build**: `tsup` (CJS + ESM, all deps external)
+- **Build**: `tsup` (CJS + ESM, `krutai` external)
 
 ## Dependency Architecture
 
 ```
-@krutai/auth@0.1.9
-├── dependency: krutai              ← API key validation (also peerDep)
-├── dependency: better-auth         ← auth engine (external in tsup)
-├── dependency: better-sqlite3      ← default SQLite adapter
-└── dependency: @types/better-sqlite3
+@krutai/auth@0.4.0
+└── dependency: krutai              ← API key validation (also peerDep)
 ```
 
-> **Important for AI**: Do NOT bundle `better-auth` or `krutai` inline (no `noExternal`). They are real dependencies and must stay external in tsup.
+> **Important for AI**: This package has NO `better-auth`, `better-sqlite3`, or database dependencies. All auth logic lives on the server. This package is a pure HTTP client.
 
 ## File Structure
 
 ```
 packages/auth/
 ├── src/
-│   ├── index.ts     # Exports krutAuth function + KrutAuth class + validator re-exports
-│   ├── client.ts    # KrutAuth class (API-key-protected wrapper)
-│   ├── types.ts     # KrutAuthConfig, AuthSession, BetterAuthOptions
-│   ├── react.ts     # re-exports better-auth/react (createAuthClient, hooks)
-│   └── next-js.ts   # re-exports better-auth/next-js (toNextJsHandler)
-├── scripts/
-│   └── migrate.js   # postinstall: auto-migrates SQLite tables via better-auth
+│   ├── index.ts     # Exports krutAuth factory + KrutAuth class + types + validators
+│   ├── client.ts    # KrutAuth class (fetch-based auth client)
+│   └── types.ts     # KrutAuthConfig, auth params, auth response types
 ├── package.json
 ├── tsconfig.json
 └── tsup.config.ts
 ```
 
-## Sub-path Exports
+## How It Works
 
-| Import | File | Purpose |
-|---|---|---|
-| `@krutai/auth` | `dist/index.js` | `krutAuth`, `KrutAuth`, validator re-exports |
-| `@krutai/auth/react` | `dist/react.js` | `createAuthClient`, hooks |
-| `@krutai/auth/next-js` | `dist/next-js.js` | `toNextJsHandler` |
+```mermaid
+sequenceDiagram
+    participant Client as @krutai/auth
+    participant Server as Your Server (/lib-auth)
+    participant BA as better-auth (server)
+
+    Client->>Server: POST /lib-auth/api/auth/sign-up/email<br/>Headers: Authorization: Bearer <apiKey>
+    Server->>Server: Validate API key
+    Server->>BA: Forward to better-auth handler
+    BA-->>Server: User + session
+    Server-->>Client: JSON response
+```
 
 ## Main Exports
 
-### `krutAuth(options)` ← PRIMARY API
+### `krutAuth(config)` ← FACTORY (recommended)
 
-Drop-in replacement for `betterAuth`. Users should always use this.
-
-**Always include `baseURL`** to avoid Better Auth base URL warnings:
+Creates a `KrutAuth` instance. Mirrors `krutAI()` from `@krutai/ai-provider`.
 
 ```typescript
 import { krutAuth } from "@krutai/auth";
-import Database from "better-sqlite3";
 
-export const auth = krutAuth({
-  database: new Database("./sqlite.db"),
-  emailAndPassword: { enabled: true },
-  baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000",
-});
-```
-
-### `KrutAuth` class ← API-KEY-PROTECTED WRAPPER
-
-For when you need API key validation before initializing auth.
-
-```typescript
-import { KrutAuth } from "@krutai/auth";
-
-const auth = new KrutAuth({
+const auth = krutAuth({
   apiKey: process.env.KRUTAI_API_KEY!,
-  betterAuthOptions: {
-    database: { provider: 'postgres', url: process.env.DATABASE_URL },
-    emailAndPassword: { enabled: true },
-  },
+  serverUrl: "https://krut.ai",
 });
 
-await auth.initialize();
-const betterAuthInstance = auth.getBetterAuth();
+await auth.initialize(); // validates key against server
 ```
 
-**Methods:**
-- `initialize(): Promise<void>` — validates API key + initializes Better Auth
-- `getBetterAuth(): Auth` — returns the Better Auth `Auth` instance
-- `isInitialized(): boolean`
-- `getApiKey(): string`
+### `KrutAuth` class ← CORE CLIENT
+
+| Method | HTTP Call | Description |
+|---|---|---|
+| `initialize()` | validates API key | Must be called before other methods |
+| `signUpEmail(params)` | `POST /lib-auth/api/auth/sign-up/email` | Register a new user |
+| `signInEmail(params)` | `POST /lib-auth/api/auth/sign-in/email` | Authenticate a user |
+| `getSession(token)` | `GET /lib-auth/api/auth/get-session` | Retrieve session info |
+| `signOut(token)` | `POST /lib-auth/api/auth/sign-out` | Invalidate a session |
+| `request(method, path, body?)` | Any | Generic helper for custom endpoints |
+| `isInitialized()` | — | Check if client is ready |
 
 ### Types
 
 #### `KrutAuthConfig`
 ```typescript
 interface KrutAuthConfig {
-  apiKey: string;                              // REQUIRED
-  betterAuthOptions?: Partial<BetterAuthOptions>;
-  validateOnInit?: boolean;                    // default: true
-  validationEndpoint?: string;
+  apiKey?: string;          // defaults to process.env.KRUTAI_API_KEY
+  serverUrl?: string;       // default: "http://localhost:8000"
+  authPrefix?: string;      // default: "/lib-auth"
+  validateOnInit?: boolean; // default: true
 }
+```
+
+#### `SignUpEmailParams` / `SignInEmailParams`
+```typescript
+interface SignUpEmailParams { email: string; password: string; name: string; }
+interface SignInEmailParams { email: string; password: string; }
+```
+
+#### `AuthResponse`
+```typescript
+interface AuthResponse { token: string; user: AuthUser; }
+```
+
+#### `AuthSession`
+```typescript
+interface AuthSession { user: AuthUser; session: AuthSessionRecord; }
 ```
 
 ### Validator Re-exports (from `krutai`)
 
-> **Note for AI assistants**: Only `validateApiKeyFormat`, `validateApiKeyWithService`, and `ApiKeyValidationError` are exported. `createApiKeyChecker` is **NOT exported**. Do not suggest it.
-> The API key validation is **format/length only** (not null, minimum length). There is no external API check call.
-
 ```typescript
-// These are re-exported from krutai — NOT defined here
-export { validateApiKeyFormat, validateApiKeyWithService, ApiKeyValidationError } from 'krutai';
+export { validateApiKeyFormat, validateApiKey } from 'krutai';
 ```
 
 ## Usage Examples
 
-### Example 1: Standard Server Setup (recommended)
+### Example 1: Sign Up + Sign In
 ```typescript
 import { krutAuth } from "@krutai/auth";
-import Database from "better-sqlite3";
 
-export const auth = krutAuth({
-  database: new Database("./sqlite.db"),
-  emailAndPassword: { enabled: true },
-  baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000",
-});
-```
-
-### Example 2: Next.js Route Handler
-```typescript
-// app/api/auth/[...all]/route.ts
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "@krutai/auth/next-js";
-
-export const { GET, POST } = toNextJsHandler(auth);
-```
-
-### Example 3: React Client
-```typescript
-import { createAuthClient } from "@krutai/auth/react";
-
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-});
-export const { signIn, signUp, signOut, useSession } = authClient;
-```
-
-### Example 4: KrutAuth with API Key Validation
-```typescript
-import { KrutAuth } from "@krutai/auth";
-
-const auth = new KrutAuth({
+const auth = krutAuth({
   apiKey: process.env.KRUTAI_API_KEY!,
-  betterAuthOptions: { emailAndPassword: { enabled: true } },
+  serverUrl: "https://krut.ai",
 });
 await auth.initialize();
+
+// Sign up
+const { token, user } = await auth.signUpEmail({
+  email: "user@example.com",
+  password: "secret123",
+  name: "Alice",
+});
+console.log("Signed up:", user.email);
+
+// Sign in
+const result = await auth.signInEmail({
+  email: "user@example.com",
+  password: "secret123",
+});
+console.log("Token:", result.token);
 ```
 
-### Example 5: Error Handling
+### Example 2: Session Management
 ```typescript
-import { KrutAuth, ApiKeyValidationError } from "@krutai/auth";
+// Get session
+const session = await auth.getSession(token);
+console.log("User:", session.user.email);
+
+// Sign out
+await auth.signOut(token);
+```
+
+### Example 3: Custom Endpoint
+```typescript
+// Call any better-auth endpoint via the generic request method
+const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
+  someParam: "value",
+});
+```
+
+### Example 4: Error Handling
+```typescript
+import { krutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
 
 try {
-  const auth = new KrutAuth({ apiKey: "bad" });
+  const auth = krutAuth({ apiKey: "bad" });
   await auth.initialize();
 } catch (e) {
-  if (e instanceof ApiKeyValidationError) {
+  if (e instanceof KrutAuthKeyValidationError) {
     console.error("Invalid API key:", e.message);
   }
 }
 ```
 
-## Auto-Migration (postinstall)
-
-`scripts/migrate.js` runs after `npm install` to create all required Better Auth SQLite tables automatically. This means users do NOT need to run any manual migration commands — sign-up and sign-in work out of the box.
-
-The script:
-1. Creates `sqlite.db` in the project root (if not present)
-2. Runs `better-auth migrate` to create all required tables
-3. Skips silently if the DB already exists and tables are up to date
-
-## tsup Configuration Notes
-
-- `better-auth` → **external** (real dependency, NOT bundled)
-- `krutai` → **external** (peer dep, NOT bundled)
-- `better-sqlite3` → **external** (real dependency)
-- `react`, `react-dom`, `next` → external
-
 ## Important Notes
 
-1. **Always set `baseURL`**: Pass `baseURL: process.env.BETTER_AUTH_BASE_URL` in `krutAuth()` options
-2. **Use `krutAuth` not `betterAuth`**: The public API is `krutAuth`. `betterAuth` is an internal implementation detail
-3. **Validator lives in `krutai`**: Never add a local `validator.ts` — import from `krutai`
-4. **No `noExternal` for `better-auth` or `krutai`**: They must stay external in tsup
-5. **`getBetterAuth()` returns `Auth`**: Uses the `Auth` type from `better-auth`, not `ReturnType<typeof betterAuth>`
+1. **No local database**: All auth logic runs on your server — this package is a pure HTTP client
+2. **API key in headers**: Every request sends `Authorization: Bearer <key>` and `x-api-key` headers
+3. **Server prefix**: Auth routes are prefixed with `/lib-auth` by default (configurable via `authPrefix`)
+4. **Call `initialize()` first**: Must validate API key before calling auth methods
+5. **Same pattern as ai-provider**: Works identically to `KrutAIProvider` — construct, initialize, call methods
 
 ## Related Packages
 
 - `krutai` — Core utilities and API validation (peer dep)
-- `@krutai/rbac` — Role-Based Access Control
+- `@krutai/ai-provider` — AI provider (same fetch-based pattern)
 
 ## Links
 
-- Better Auth Docs: https://www.better-auth.com/docs
 - GitHub: https://github.com/AccountantAIOrg/krut_packages
 - npm: https://www.npmjs.com/package/@krutai/auth

@@ -3,7 +3,7 @@
 ## Package Overview
 
 - **Name**: `@krutai/ai-provider`
-- **Version**: `0.2.2`
+- **Version**: `0.2.14`
 - **Purpose**: AI provider for KrutAI — fetch-based client for your deployed LangChain server with API key validation
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
 - **Build**: `tsup` (CJS + ESM, no external SDK deps)
@@ -11,7 +11,7 @@
 ## Architecture
 
 ```
-@krutai/ai-provider@0.2.2
+@krutai/ai-provider@0.2.14
  └── peerDep: krutai  (core utilities)
 
 AI Flow:
@@ -41,7 +41,7 @@ packages/ai-provider/
 | Endpoint | Method | Body | Response |
 |---|---|---|---|
 | `/validate` | POST | `{ apiKey }` | `{ valid: true/false, message? }` |
-| `/generate` | POST | `{ prompt, model, system?, maxTokens?, temperature? }` | `{ text/content/message: string }` |
+| `/generate` | POST | `{ prompt, model, system?, maxTokens?, temperature?, isStructure?, output_structure?, history?, attachments? }` | `{ text/content/message: string }` or `any` (if structured) |
 | `/stream` | POST | `{ messages, model, system?, maxTokens?, temperature? }` | SSE stream `data: <chunk>` |
 
 All AI endpoints receive `Authorization: Bearer <apiKey>` and `x-api-key: <apiKey>` headers.
@@ -68,6 +68,17 @@ Used to get a single, non-streaming text response from a string prompt.
 ```typescript
 const text = await ai.chat('Write a poem about TypeScript');
 console.log(text);
+
+// Example: Structured Output
+interface UserProfile {
+  name: string;
+  age: number;
+}
+const profile = await ai.chat<UserProfile>('Generate a profile for John Doe', {
+  isStructure: true,
+  output_structure: ['name', 'age'] // or a JSON Schema
+});
+console.log(profile.name, profile.age);
 ```
 
 ### 2. `streamChatResponse(messages: ChatMessage[])` — Multi-Turn & Streaming
@@ -102,7 +113,7 @@ import { KrutAIProvider } from '@krutai/ai-provider';
 const ai = new KrutAIProvider({
   apiKey: process.env.KRUTAI_API_KEY!,
   // serverUrl: 'https://krut.ai', // Optional: defaults to localhost:8000
-  model: 'gpt-4o',         // optional, default: 'default'
+  model: 'gemini-3.1-pro-preview',         // optional, default: 'default'
   validateOnInit: true,     // default: true
 });
 
@@ -151,6 +162,10 @@ interface GenerateOptions {
   images?: string[];     // Array of image URLs or base64 data URIs
   documents?: string[];  // Array of document URLs or base64 data URIs
   pdf?: string[];        // Array of PDF URLs or base64 data URIs
+  history?: ChatMessage[]; // Optional: conversation history
+  attachments?: any[];    // Optional: multimodal attachments
+  isStructure?: boolean;   // Whether to return structured output
+  output_structure?: any;  // The schema (JSON Schema or field array) for structured output
 }
 ```
 

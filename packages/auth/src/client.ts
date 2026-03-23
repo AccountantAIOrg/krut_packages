@@ -1,137 +1,256 @@
-import { betterAuth } from 'better-auth';
-import type { Auth } from 'better-auth';
-import type { KrutAuthConfig } from './types';
-// Import validation from krutai peer dependency
+import type {
+    KrutAuthConfig,
+    SignUpEmailParams,
+    SignInEmailParams,
+    AuthSession,
+    AuthResponse,
+} from './types';
+import { DEFAULT_SERVER_URL, DEFAULT_AUTH_PREFIX } from './types';
 import {
+    validateApiKeyWithService as validateApiKey,
     validateApiKeyFormat,
-    validateApiKeyWithService,
+    ApiKeyValidationError as KrutAuthKeyValidationError,
 } from 'krutai';
 
+export { KrutAuthKeyValidationError };
+
 /**
- * KrutAuth - Authentication client for KrutAI
+ * KrutAuth — fetch-based authentication client for KrutAI
  *
- * This class wraps Better Auth and adds API key validation
- * to ensure only authorized users can access authentication features.
+ * Calls your deployed server's `/lib-auth` routes for all auth operations.
+ * The API key is validated against the server before use.
  *
  * @example
  * ```typescript
  * import { KrutAuth } from '@krutai/auth';
  *
  * const auth = new KrutAuth({
- *   apiKey: 'your-api-key-here',
- *   betterAuthOptions: {
- *     // Better Auth configuration
- *   }
+ *   apiKey: process.env.KRUTAI_API_KEY!,
+ *   serverUrl: 'https://krut.ai',
  * });
  *
- * // Initialize the client (validates API key)
- * await auth.initialize();
+ * await auth.initialize(); // validates key against server
  *
- * // Use authentication features
- * const betterAuth = auth.getBetterAuth();
+ * // Sign up
+ * const { token, user } = await auth.signUpEmail({
+ *   email: 'user@example.com',
+ *   password: 'secret123',
+ *   name: 'Alice',
+ * });
+ *
+ * // Sign in
+ * const result = await auth.signInEmail({
+ *   email: 'user@example.com',
+ *   password: 'secret123',
+ * });
+ *
+ * // Get session
+ * const session = await auth.getSession(result.token);
  * ```
  */
 export class KrutAuth {
-    private apiKey: string;
-    private betterAuthInstance: Auth | null = null;
+    private readonly apiKey: string;
+    private readonly serverUrl: string;
+    private readonly authPrefix: string;
+    private readonly config: KrutAuthConfig;
+
     private initialized = false;
 
-    /**
-     * Creates a new KrutAuth instance
-     * @param config - Configuration options
-     * @throws {ApiKeyValidationError} If API key is invalid
-     */
-    constructor(private config: KrutAuthConfig) {
-        const key = config.apiKey || process.env.KRUTAI_API_KEY || '';
-        // Validate API key format immediately
-        validateApiKeyFormat(key);
-        this.apiKey = key;
+    constructor(config: KrutAuthConfig) {
+        this.config = config;
+        this.apiKey = config.apiKey || process.env.KRUTAI_API_KEY || '';
+        this.serverUrl = (config.serverUrl ?? DEFAULT_SERVER_URL).replace(/\/$/, '');
+        this.authPrefix = (config.authPrefix ?? DEFAULT_AUTH_PREFIX).replace(/\/$/, '');
 
-        // Initialize if validation is not required on init
+        // Basic format check immediately on construction
+        validateApiKeyFormat(this.apiKey);
+
+        // If validation is disabled, mark as ready immediately
         if (config.validateOnInit === false) {
-            this.initializeBetterAuth();
+            this.initialized = true;
         }
     }
 
     /**
-     * Initialize the authentication client
-     * Validates the API key and sets up Better Auth
-     * @throws {ApiKeyValidationError} If API key validation fails
+     * Initialize the auth client.
+     * Validates the API key against the server, then marks client as ready.
+     *
+     * @throws {KrutAuthKeyValidationError} if the key is rejected or the server is unreachable
      */
     async initialize(): Promise<void> {
-        if (this.initialized) {
-            return;
-        }
+        if (this.initialized) return;
 
-        // Validate API key with service if needed
         if (this.config.validateOnInit !== false) {
-            await validateApiKeyWithService(this.apiKey, this.config.serverUrl);
+            await validateApiKey(this.apiKey, this.serverUrl);
         }
 
-        this.initializeBetterAuth();
         this.initialized = true;
     }
 
     /**
-     * Initialize Better Auth instance
-     * @private
-     */
-    private initializeBetterAuth(): void {
-        this.betterAuthInstance = betterAuth({
-            ...this.config.betterAuthOptions,
-        });
-    }
-
-    /**
-     * Get the Better Auth instance
-     * @throws {Error} If not initialized
-     */
-    getBetterAuth(): Auth {
-        if (!this.betterAuthInstance) {
-            throw new Error(
-                'KrutAuth not initialized. Call initialize() first or set validateOnInit to false.'
-            );
-        }
-        return this.betterAuthInstance;
-    }
-
-    /**
-     * Check if the client is initialized
+     * Returns whether the client has been initialized.
      */
     isInitialized(): boolean {
         return this.initialized;
     }
 
-    /**
-     * Get the API key (useful for making authenticated requests)
-     * @returns The API key
-     */
-    getApiKey(): string {
-        return this.apiKey;
+    // ---------------------------------------------------------------------------
+    // Private helpers
+    // ---------------------------------------------------------------------------
+
+    private assertInitialized(): void {
+        if (!this.initialized) {
+            throw new Error(
+                'KrutAuth not initialized. Call initialize() first or set validateOnInit to false.'
+            );
+        }
+    }
+
+    /** Common request headers sent to the server on every auth call. */
+    private authHeaders(): Record<string, string> {
+        return {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+            'x-api-key': this.apiKey,
+        };
     }
 
     /**
-     * Sign in a user
-     * This is a convenience method that wraps Better Auth
-     * You can access the full Better Auth API via getBetterAuth()
+     * Build the full URL for an auth endpoint.
+     * @param path - The better-auth sub-path, e.g. `/api/auth/sign-up/email`
      */
-    async signIn(): Promise<Auth> {
-        return this.getBetterAuth();
+    private url(path: string): string {
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        return `${this.serverUrl}${this.authPrefix}${cleanPath}`;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Public Auth Methods
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Generic request helper for any better-auth endpoint.
+     *
+     * Use this to call endpoints not covered by the convenience methods.
+     *
+     * @param method - HTTP method (GET, POST, etc.)
+     * @param path - The better-auth endpoint path (e.g. `/api/auth/sign-up/email`)
+     * @param body - Optional JSON body
+     * @returns The parsed JSON response
+     */
+    async request<T = unknown>(
+        method: string,
+        path: string,
+        body?: Record<string, unknown> | object
+    ): Promise<T> {
+        this.assertInitialized();
+
+        const options: RequestInit = {
+            method,
+            headers: this.authHeaders(),
+        };
+
+        if (body && method !== 'GET') {
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(this.url(path), options);
+
+        if (!response.ok) {
+            let errorMessage = `Auth server returned HTTP ${response.status} for ${path}`;
+            try {
+                const errorData = (await response.json()) as { message?: string; error?: string };
+                if (errorData?.error) errorMessage = errorData.error;
+                else if (errorData?.message) errorMessage = errorData.message;
+            } catch { }
+            throw new Error(errorMessage);
+        }
+
+        return (await response.json()) as T;
     }
 
     /**
-     * Sign out the current user
-     * You can access the full Better Auth API via getBetterAuth()
+     * Sign up a new user with email and password.
+     *
+     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-up/email
+     *
+     * @param params - Sign-up parameters (email, password, name)
+     * @returns The auth response containing token and user
      */
-    async signOut(): Promise<Auth> {
-        return this.getBetterAuth();
+    async signUpEmail(params: SignUpEmailParams): Promise<AuthResponse> {
+        return this.request<AuthResponse>('POST', '/api/auth/sign-up/email', params);
     }
 
     /**
-     * Get the current session
-     * You can access the full Better Auth API via getBetterAuth()
+     * Sign in with email and password.
+     *
+     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-in/email
+     *
+     * @param params - Sign-in parameters (email, password)
+     * @returns The auth response containing token and user
      */
-    async getSession(): Promise<Auth> {
-        return this.getBetterAuth();
+    async signInEmail(params: SignInEmailParams): Promise<AuthResponse> {
+        return this.request<AuthResponse>('POST', '/api/auth/sign-in/email', params);
+    }
+
+    /**
+     * Get the current session for a user.
+     *
+     * Calls: GET {serverUrl}/lib-auth/api/auth/get-session
+     *
+     * @param sessionToken - The session token (Bearer token from sign-in)
+     * @returns The session containing user and session data
+     */
+    async getSession(sessionToken: string): Promise<AuthSession> {
+        this.assertInitialized();
+
+        const response = await fetch(this.url('/api/auth/get-session'), {
+            method: 'GET',
+            headers: {
+                ...this.authHeaders(),
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            let errorMessage = `Auth server returned HTTP ${response.status} for /api/auth/get-session`;
+            try {
+                const errorData = (await response.json()) as { message?: string; error?: string };
+                if (errorData?.error) errorMessage = errorData.error;
+                else if (errorData?.message) errorMessage = errorData.message;
+            } catch { }
+            throw new Error(errorMessage);
+        }
+
+        return (await response.json()) as AuthSession;
+    }
+
+    /**
+     * Sign out the current user.
+     *
+     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-out
+     *
+     * @param sessionToken - The session token to invalidate
+     */
+    async signOut(sessionToken: string): Promise<void> {
+        this.assertInitialized();
+
+        const response = await fetch(this.url('/api/auth/sign-out'), {
+            method: 'POST',
+            headers: {
+                ...this.authHeaders(),
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            let errorMessage = `Auth server returned HTTP ${response.status} for /api/auth/sign-out`;
+            try {
+                const errorData = (await response.json()) as { message?: string; error?: string };
+                if (errorData?.error) errorMessage = errorData.error;
+                else if (errorData?.message) errorMessage = errorData.message;
+            } catch { }
+            throw new Error(errorMessage);
+        }
     }
 }

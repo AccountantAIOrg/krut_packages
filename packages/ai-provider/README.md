@@ -42,7 +42,7 @@ console.log(text);
 const ai = krutAI({
   apiKey: process.env.KRUTAI_API_KEY!,
   serverUrl: 'https://krut.ai', // Override default for production
-  model: 'gpt-4o', // optional — server's default is used if omitted
+  model: 'gemini-3.1-pro-preview', // optional — server's default is used if omitted
 });
 
 await ai.initialize();
@@ -93,7 +93,7 @@ const response = await ai.chat([
     ]
   }
 ], { 
-  model: 'gpt-4o',
+  model: 'gemini-3.1-pro-preview',
   // You can also pass images, documents, or pdfs via GenerateOptions
   images: ['https://example.com/photo.jpg'],
   documents: ['https://example.com/doc.docx'],
@@ -139,6 +139,26 @@ if (reader) {
 }
 ```
 
+### Structured Output
+
+You can request the AI to return data in a specific JSON structure (e.g. for generating models, summaries, or profiles).
+
+```typescript
+interface Profile {
+  name: string;
+  age: number;
+}
+
+const profile = await ai.chat<Profile>('Generate a profile for John Doe', {
+  isStructure: true,
+  // Pass an array of field names for simple string objects...
+  output_structure: ['name', 'age'], 
+  // ...or pass a full JSON Schema for complex objects
+});
+
+console.log(profile.name, profile.age);
+```
+
 ### Skip validation (useful for tests)
 
 ```typescript
@@ -159,7 +179,7 @@ Your LangChain server must expose these endpoints:
 | Endpoint | Method | Auth | Body |
 |---|---|---|---|
 | `/validate` | POST | `x-api-key` header | `{ "apiKey": "..." }` |
-| `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "model": "...", ... }` |
+| `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "isStructure": boolean, "output_structure": any, ... }` |
 | `/stream` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
 
 **Validation response:** `{ "valid": true }` or `{ "valid": false, "message": "reason" }`

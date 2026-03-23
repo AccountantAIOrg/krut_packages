@@ -6,7 +6,7 @@
  * Default model identifier sent to the LangChain server when no model is specified.
  * Your server can use this value to route to its own default model.
  */
-export const DEFAULT_MODEL = 'default' as const;
+export const DEFAULT_MODEL = 'gemini-3.1-pro-preview' as const;
 
 /**
  * Default base URL for the LangChain backend server.
@@ -112,4 +112,25 @@ export interface GenerateOptions {
      * Array of PDF URLs or base64 data URIs to include with the request.
      */
     pdf?: string[];
+
+    /**
+     * Optional conversation history.
+     */
+    history?: ChatMessage[];
+
+    /**
+     * Optional attachments.
+     */
+    attachments?: any[];
+
+    /**
+     * Whether to return structured output.
+     */
+    isStructure?: boolean;
+
+    /**
+     * The schema for structured output.
+     * Can be a JSON Schema object or an array of field names.
+     */
+    output_structure?: any;
 }

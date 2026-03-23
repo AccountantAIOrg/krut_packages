@@ -1,57 +1,120 @@
-import type { BetterAuthOptions } from 'better-auth';
+/**
+ * Types for @krutai/auth
+ *
+ * Pure fetch-based auth client — no local better-auth dependency.
+ */
+
+/**
+ * Default base URL for the KrutAI server.
+ * Used when no serverUrl is provided in the config.
+ */
+export const DEFAULT_SERVER_URL = 'http://localhost:8000' as const;
+
+/**
+ * Default path prefix for the auth routes on the server.
+ * The server mounts better-auth under this prefix.
+ */
+export const DEFAULT_AUTH_PREFIX = '/lib-auth' as const;
 
 /**
  * Configuration options for KrutAuth
  */
 export interface KrutAuthConfig {
     /**
-     * API key for authentication with KrutAI services
+     * KrutAI API key.
+     * Validated against the server before use.
      * Optional: defaults to process.env.KRUTAI_API_KEY
      */
     apiKey?: string;
 
     /**
-     * Better Auth configuration options
-     * @see https://www.better-auth.com/docs
-     */
-    betterAuthOptions?: Partial<BetterAuthOptions>;
-
-    /**
-     * Whether to validate the API key on initialization
-     * @default true
-     */
-    validateOnInit?: boolean;
-
-    /**
-     * Base URL of your deployed LangChain backend/validation server
+     * Base URL of your deployed KrutAI server.
      * @default "http://localhost:8000"
+     * @example "https://krut.ai"
      */
     serverUrl?: string;
 
     /**
-     * Custom API validation endpoint
+     * Path prefix for the auth routes on the server.
+     * @default "/lib-auth"
      */
-    validationEndpoint?: string;
+    authPrefix?: string;
+
+    /**
+     * Whether to validate the API key against the server on initialization.
+     * Set to false to skip the validation round-trip (e.g. in tests).
+     * @default true
+     */
+    validateOnInit?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Auth method parameter types
+// ---------------------------------------------------------------------------
+
+/**
+ * Parameters for email/password sign-up
+ */
+export interface SignUpEmailParams {
+    /** User email */
+    email: string;
+    /** User password */
+    password: string;
+    /** Display name */
+    name: string;
 }
 
 /**
- * Authentication session interface
+ * Parameters for email/password sign-in
+ */
+export interface SignInEmailParams {
+    /** User email */
+    email: string;
+    /** User password */
+    password: string;
+}
+
+// ---------------------------------------------------------------------------
+// Auth response types
+// ---------------------------------------------------------------------------
+
+/**
+ * A user record returned by the auth server
+ */
+export interface AuthUser {
+    id: string;
+    email: string;
+    name?: string;
+    emailVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+    [key: string]: unknown;
+}
+
+/**
+ * A session record returned by the auth server
+ */
+export interface AuthSessionRecord {
+    id: string;
+    userId: string;
+    token: string;
+    expiresAt: string;
+    [key: string]: unknown;
+}
+
+/**
+ * Combined session + user response
  */
 export interface AuthSession {
-    user: {
-        id: string;
-        email: string;
-        name?: string;
-        [key: string]: unknown;
-    };
-    session: {
-        id: string;
-        expiresAt: Date;
-        [key: string]: unknown;
-    };
+    user: AuthUser;
+    session: AuthSessionRecord;
 }
 
 /**
- * Re-export Better Auth types for convenience
+ * Sign-up / sign-in response (contains token + user)
  */
-export type { BetterAuthOptions } from 'better-auth';
+export interface AuthResponse {
+    token: string;
+    user: AuthUser;
+    [key: string]: unknown;
+}

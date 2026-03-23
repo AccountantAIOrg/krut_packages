@@ -24,7 +24,7 @@
  * const ai = krutAI({
  *   apiKey: process.env.KRUTAI_API_KEY!,
  *   serverUrl: 'https://krut.ai',
- *   model: 'gpt-4o',
+ *   model: 'gemini-3.1-pro-preview',
  * });
  * await ai.initialize();
  * const text = await ai.chat('Hello!');
@@ -89,4 +89,4 @@ export function krutAI(
 }
 
 // Package metadata
-export const VERSION = '0.2.0';
+export const VERSION = '0.2.15';
