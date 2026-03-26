@@ -79,6 +79,7 @@ export class ComparisonApiClient {
     private timeout: number;
     private initialized = false;
     private validateOnInit: boolean;
+    private initializationPromise: Promise<void> | null = null;
 
     constructor(config: ComparisonClientConfig) {
         this.serverUrl = (config.serverUrl || 'http://localhost:8000').replace(/\/$/, '');
@@ -93,21 +94,66 @@ export class ComparisonApiClient {
 
     /**
      * Initialize the client.
-     * Optionally validates the API key if validateOnInit is true.
+     * Validates the API key against the server if validateOnInit is true.
+     * @throws {Error} If validation fails or API key is missing
      */
     async initialize(): Promise<void> {
         if (this.initialized) return;
+        if (this.initializationPromise) return this.initializationPromise;
 
-        // In a real implementation, we might call a /health or /validate-key endpoint
-        // For now, we'll just mark as initialized
-        this.initialized = true;
+        this.initializationPromise = (async () => {
+            if (!this.apiKey || this.apiKey.trim().length === 0) {
+                this.initializationPromise = null;
+                throw new Error('No API key provided. Please set the KRUTAI_API_KEY environment variable or pass it in the config.');
+            }
+
+            try {
+                // Call the validation endpoint - standard across KrutAI services
+                const url = `${this.serverUrl}/validate`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': this.apiKey,
+                    },
+                    body: JSON.stringify({ apiKey: this.apiKey }),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `API key validation failed (HTTP ${response.status})`;
+                    try {
+                        const errorData = await response.json() as { error?: string; message?: string };
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch {
+                        // Keep default
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json() as { valid?: boolean };
+                if (data.valid === false) {
+                    throw new Error('Invalid API key provided.');
+                }
+
+                this.initialized = true;
+            } catch (err) {
+                this.initializationPromise = null;
+                if (err instanceof Error) throw err;
+                throw new Error('Failed to validate API key with the server.');
+            }
+        })();
+
+        return this.initializationPromise;
     }
 
     private getHeaders(): Record<string, string> {
         const headers: Record<string, string> = {
             'Accept': 'application/json',
         };
-        if (this.apiKey) {
+        
+        // Ensure we send headers if apiKey is present, even if it's an empty string 
+        // (though initialize() should have caught empty strings if validateOnInit is true)
+        if (this.apiKey !== undefined && this.apiKey !== null) {
             headers['Authorization'] = `Bearer ${this.apiKey}`;
             headers['x-api-key'] = this.apiKey;
         }
@@ -115,6 +161,11 @@ export class ComparisonApiClient {
     }
 
     private async request<T>(endpoint: string, options: RequestInit): Promise<T> {
+        // Automatically validate on the first request if required and not already done
+        if (!this.initialized && this.validateOnInit) {
+            await this.initialize();
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 

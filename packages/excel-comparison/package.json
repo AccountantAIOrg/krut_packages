@@ -1,6 +1,6 @@
 {
-    "name": "@krutai/data-comparison-lib",
-    "version": "0.0.4",
+    "name": "@krutai/excel-comparison",
+    "version": "0.0.7",
     "description": "A powerful library for comparing Excel and CSV files with intelligent column matching and difference reporting",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -35,7 +35,8 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "exceljs": "^4.4.0"
+        "exceljs": "^4.4.0",
+        "xlsx": "0.18.5"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",
@@ -48,6 +49,6 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AccountantAIOrg/krut_packages.git",
-        "directory": "packages/data-comparison-lib"
+        "directory": "packages/excel-comparison"
     }
 }

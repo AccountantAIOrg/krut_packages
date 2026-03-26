@@ -1,4 +1,4 @@
-# @krutai/data-comparison-lib
+# @krutai/excel-comparison
 
 A powerful library for comparing Excel and CSV files by leveraging Backend APIs for high-performance processing.
 
@@ -13,7 +13,7 @@ A powerful library for comparing Excel and CSV files by leveraging Backend APIs 
 ## Installation
 
 ```bash
-npm install @krutai/data-comparison-lib
+npm install @krutai/excel-comparison
 ```
 
 ## Quick Start
@@ -21,7 +21,7 @@ npm install @krutai/data-comparison-lib
 ### Basic Usage (Server-side)
 
 ```typescript
-import { krutExcelComparison } from "@krutai/data-comparison-lib";
+import { krutExcelComparison } from "@krutai/excel-comparison";
 
 // Create client
 const client = krutExcelComparison({
@@ -51,7 +51,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     createComparisonClient,
     type CompareFilesOptions,
-} from "@krutai/data-comparison-lib";
+} from "@krutai/excel-comparison";
 
 const SUPPORTED_EXTENSIONS = new Set(["xlsx", "xls", "csv"]);
 

@@ -1,10 +1,10 @@
-# AI Reference Guide for @krutai/data-comparison-lib
+# AI Reference Guide for @krutai/excel-comparison
 
-This document provides comprehensive context for AI assistants to help users integrate and use the data-comparison-lib library effectively.
+This document provides comprehensive context for AI assistants to help users integrate and use the excel-comparison library effectively.
 
 ## Library Purpose
 
-The `@krutai/data-comparison-lib` library compares Excel (.xlsx, .xls) and CSV files, finding:
+The `@krutai/excel-comparison` library compares Excel (.xlsx, .xls) and CSV files, finding:
 - Matching rows between two files
 - Different values in matching rows
 - Unique rows in each file
@@ -13,7 +13,7 @@ The `@krutai/data-comparison-lib` library compares Excel (.xlsx, .xls) and CSV f
 ## Core Classes and Exports
 
 // Main class - use this for comparing files via API
-import { krutExcelComparison, createComparisonClient } from "@krutai/data-comparison-lib";
+import { krutExcelComparison, createComparisonClient } from "@krutai/excel-comparison";
 
 // Create client using convenience factory (recommended)
 const client = krutExcelComparison({
@@ -27,7 +27,7 @@ const client2 = createComparisonClient({
 });
 
 // API client class
-import { ComparisonApiClient } from "@krutai/data-comparison-lib";
+import { ComparisonApiClient } from "@krutai/excel-comparison";
 
 ### Type Exports
 
@@ -37,7 +37,7 @@ import type {
   PreviewResponse,        // Preview info for files
   CompareFilesOptions,    // Configuration options
   DataRecord,             // Row data as object (used in reporting/engine)
-} from "@krutai/data-comparison-lib";
+} from "@krutai/excel-comparison";
 ```
 
 ## Common Use Cases
@@ -45,7 +45,7 @@ import type {
 ### 1. Basic File Comparison (via API)
 
 ```typescript
-import { krutExcelComparison } from "@krutai/data-comparison-lib";
+import { krutExcelComparison } from "@krutai/excel-comparison";
 
 const client = krutExcelComparison({
   apiKey: "your-api-key"
@@ -87,7 +87,7 @@ const preview = await client.previewFiles(file1, file2);
 ### 4. Generate Excel Report
 
 ```typescript
-import { StyledReporter } from "@krutai/data-comparison-lib";
+import { StyledReporter } from "@krutai/excel-comparison";
 
 const reporter = new StyledReporter({
   headerColor: "4472C4",      // Blue header
@@ -107,7 +107,7 @@ const reportData = result.results.map((r, i) => ({
       [`File2_${col}`, r.file2Row?.[col] ?? 'N/A'],
     ])
   )
-));
+}));
 
 const report = await reporter.generateReport({
   data: reportData,
@@ -126,7 +126,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     createComparisonClient,
     type CompareFilesOptions,
-} from "@krutai/data-comparison-lib";
+} from "@krutai/excel-comparison";
 
 const SUPPORTED_EXTENSIONS = new Set(["xlsx", "xls", "csv"]);
 
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
 ```typescript
 import express from 'express';
 import multer from 'multer';
-import { krutExcelComparison } from "@krutai/data-comparison-lib";
+import { krutExcelComparison } from "@krutai/excel-comparison";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });

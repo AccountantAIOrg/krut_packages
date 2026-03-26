@@ -1,5 +1,8 @@
 import { ComparisonApiClient, ComparisonClientConfig } from './api-client';
 export { ComparisonApiClient, createComparisonClient, type ComparisonClientConfig } from './api-client';
+export { StyledReporter } from './reporter';
+export { DataLoader } from './loader';
+
 export type {
     CompareFilesOptions,
     ComparisonApiResponse,
