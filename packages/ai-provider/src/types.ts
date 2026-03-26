@@ -14,6 +14,69 @@ export const DEFAULT_MODEL = 'gemini-3.1-pro-preview' as const;
  */
 export const DEFAULT_SERVER_URL = 'http://localhost:8000' as const;
 
+// ============================================================================
+// Comparison Types
+// ============================================================================
+
+export interface DataRecord {
+    [key: string]: unknown;
+}
+
+export interface FileSchema {
+    name: string;
+    rowCount: number;
+    columns: string[];
+    sample: DataRecord[];
+}
+
+export interface ComparisonSummary {
+    totalRows: number;
+    differencesFound: number;
+    matchesFound: number;
+    status: string;
+}
+
+export interface ComparisonCodeResult {
+    code: string;
+    humanExplanation: string[];
+    constants?: Record<string, unknown>;
+}
+
+export interface ComparisonResult {
+    summary: ComparisonSummary;
+    metadata?: {
+        file1Columns?: string[];
+        file2Columns?: string[];
+        executionTime?: number;
+    };
+}
+
+export interface ComparisonResponse {
+    success: boolean;
+    result?: ComparisonResult;
+    generatedCode?: string;
+    humanExplanation?: string[];
+    downloadUrl?: string;
+    fileName?: string;
+    error?: string;
+}
+
+export interface PreviewResponse {
+    success: boolean;
+    file1?: FileSchema;
+    file2?: FileSchema;
+    error?: string;
+}
+
+export interface GenerateCodeOptions {
+    prompt?: string;
+}
+
+export interface CompareFilesOptions {
+    code: string;
+    prompt?: string;
+}
+
 /**
  * Configuration options for KrutAIProvider
  */

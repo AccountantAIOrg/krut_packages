@@ -55,7 +55,20 @@ export {
     validateApiKeyWithService as validateApiKey,
     validateApiKeyFormat,
 } from 'krutai';
-export type { KrutAIProviderConfig, GenerateOptions, ChatMessage } from './types';
+export type {
+    KrutAIProviderConfig,
+    GenerateOptions,
+    ChatMessage,
+    DataRecord,
+    FileSchema,
+    ComparisonSummary,
+    ComparisonCodeResult,
+    ComparisonResult,
+    ComparisonResponse,
+    PreviewResponse,
+    GenerateCodeOptions,
+    CompareFilesOptions,
+} from './types';
 export { DEFAULT_MODEL } from './types';
 
 /**
@@ -89,4 +102,4 @@ export function krutAI(
 }
 
 // Package metadata
-export const VERSION = '0.2.15';
+export const VERSION = '0.3.4';

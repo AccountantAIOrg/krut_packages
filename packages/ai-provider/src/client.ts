@@ -1,4 +1,8 @@
-import type { KrutAIProviderConfig, GenerateOptions, ChatMessage } from './types';
+import type {
+    KrutAIProviderConfig,
+    GenerateOptions,
+    ChatMessage,
+} from './types';
 import { DEFAULT_MODEL, DEFAULT_SERVER_URL } from './types';
 import {
     validateApiKeyWithService as validateApiKey,
