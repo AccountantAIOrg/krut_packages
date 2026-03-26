@@ -33,7 +33,7 @@ import { KrutAuth } from '@krutai/auth';
 
 // Initialize with your API key
 const auth = new KrutAuth({
-  apiKey: 'your-api-key-here'
+  apiKey: 'your-krut-api-key-here'
 });
 
 // Use authentication features

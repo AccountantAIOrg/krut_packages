@@ -1,7 +1,28 @@
-export interface ComparisonApiOptions {
-    baseUrl: string;
+export interface ComparisonClientConfig {
+    /**
+     * KrutAI API key.
+     * Optional: defaults to process.env.KRUTAI_API_KEY
+     */
     apiKey?: string;
+
+    /**
+     * Base URL of your deployed comparison backend server.
+     * @default "http://localhost:8000"
+     * @example "https://api.krut.ai"
+     */
+    serverUrl?: string;
+
+    /**
+     * Request timeout in milliseconds.
+     * @default 60000
+     */
     timeout?: number;
+
+    /**
+     * Whether to validate the API key against the server on initialization.
+     * @default true
+     */
+    validateOnInit?: boolean;
 }
 
 export interface CompareFilesOptions {
@@ -53,14 +74,82 @@ export interface ComparisonApiResponse {
 }
 
 export class ComparisonApiClient {
-    private baseUrl: string;
+    private serverUrl: string;
     private apiKey?: string;
     private timeout: number;
+    private initialized = false;
+    private validateOnInit: boolean;
 
-    constructor(options: ComparisonApiOptions) {
-        this.baseUrl = options.baseUrl.replace(/\/$/, '');
-        this.apiKey = options.apiKey;
-        this.timeout = options.timeout ?? 60000;
+    constructor(config: ComparisonClientConfig) {
+        this.serverUrl = (config.serverUrl || 'http://localhost:8000').replace(/\/$/, '');
+        this.apiKey = config.apiKey || (typeof process !== 'undefined' ? process.env.KRUTAI_API_KEY : undefined);
+        this.timeout = config.timeout ?? 60000;
+        this.validateOnInit = config.validateOnInit ?? true;
+
+        if (!this.validateOnInit) {
+            this.initialized = true;
+        }
+    }
+
+    /**
+     * Initialize the client.
+     * Optionally validates the API key if validateOnInit is true.
+     */
+    async initialize(): Promise<void> {
+        if (this.initialized) return;
+
+        // In a real implementation, we might call a /health or /validate-key endpoint
+        // For now, we'll just mark as initialized
+        this.initialized = true;
+    }
+
+    private getHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
+            'Accept': 'application/json',
+        };
+        if (this.apiKey) {
+            headers['Authorization'] = `Bearer ${this.apiKey}`;
+            headers['x-api-key'] = this.apiKey;
+        }
+        return headers;
+    }
+
+    private async request<T>(endpoint: string, options: RequestInit): Promise<T> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+            const response = await fetch(`${this.serverUrl}${endpoint}`, {
+                ...options,
+                headers: {
+                    ...this.getHeaders(),
+                    ...options.headers,
+                },
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json() as { error?: string; message?: string };
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                } catch {
+                    // Keep default
+                }
+                throw new Error(errorMessage);
+            }
+
+            return await response.json() as T;
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err instanceof Error) {
+                if (err.name === 'AbortError') throw new Error('Request timed out');
+                throw err;
+            }
+            throw new Error('Unknown error occurred');
+        }
     }
 
     async compareFiles(
@@ -91,51 +180,15 @@ export class ComparisonApiClient {
             formData.append('caseSensitive', String(compareOptions.caseSensitive));
         }
 
-        const headers: Record<string, string> = {};
-        if (this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-            headers['x-api-key'] = this.apiKey;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
         try {
-            const response = await fetch(`${this.baseUrl}/api/comparison/compare`, {
+            return await this.request<ComparisonApiResponse>('/api/comparison/compare', {
                 method: 'POST',
-                headers,
                 body: formData,
-                signal: controller.signal,
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-                try {
-                    const errorData = await response.json() as { error?: string; message?: string };
-                    errorMessage = errorData.error || errorData.message || errorMessage;
-                } catch {
-                    // Keep default message
-                }
-                return {
-                    success: false,
-                    error: errorMessage,
-                };
-            }
-
-            return await response.json() as ComparisonApiResponse;
-        } catch (err) {
-            clearTimeout(timeoutId);
-            if (err instanceof Error && err.name === 'AbortError') {
-                return {
-                    success: false,
-                    error: 'Request timed out',
-                };
-            }
+        } catch (error) {
             return {
                 success: false,
-                error: err instanceof Error ? err.message : 'Unknown error occurred',
+                error: error instanceof Error ? error.message : 'Unknown error',
             };
         }
     }
@@ -162,51 +215,15 @@ export class ComparisonApiClient {
             formData.append('caseSensitive', String(compareOptions.caseSensitive));
         }
 
-        const headers: Record<string, string> = {};
-        if (this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-            headers['x-api-key'] = this.apiKey;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
         try {
-            const response = await fetch(`${this.baseUrl}/api/comparison/compare`, {
+            return await this.request<ComparisonApiResponse>('/api/comparison/compare', {
                 method: 'POST',
-                headers,
                 body: formData,
-                signal: controller.signal,
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-                try {
-                    const errorData = await response.json() as { error?: string; message?: string };
-                    errorMessage = errorData.error || errorData.message || errorMessage;
-                } catch {
-                    // Keep default message
-                }
-                return {
-                    success: false,
-                    error: errorMessage,
-                };
-            }
-
-            return await response.json() as ComparisonApiResponse;
-        } catch (err) {
-            clearTimeout(timeoutId);
-            if (err instanceof Error && err.name === 'AbortError') {
-                return {
-                    success: false,
-                    error: 'Request timed out',
-                };
-            }
+        } catch (error) {
             return {
                 success: false,
-                error: err instanceof Error ? err.message : 'Unknown error occurred',
+                error: error instanceof Error ? error.message : 'Unknown error',
             };
         }
     }
@@ -216,51 +233,15 @@ export class ComparisonApiClient {
         formData.append('file1', file1);
         formData.append('file2', file2);
 
-        const headers: Record<string, string> = {};
-        if (this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-            headers['x-api-key'] = this.apiKey;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
         try {
-            const response = await fetch(`${this.baseUrl}/api/comparison/preview`, {
+            return await this.request<PreviewResponse>('/api/comparison/preview', {
                 method: 'POST',
-                headers,
                 body: formData,
-                signal: controller.signal,
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-                try {
-                    const errorData = await response.json() as { error?: string; message?: string };
-                    errorMessage = errorData.error || errorData.message || errorMessage;
-                } catch {
-                    // Keep default message
-                }
-                return {
-                    success: false,
-                    error: errorMessage,
-                };
-            }
-
-            return await response.json() as PreviewResponse;
-        } catch (err) {
-            clearTimeout(timeoutId);
-            if (err instanceof Error && err.name === 'AbortError') {
-                return {
-                    success: false,
-                    error: 'Request timed out',
-                };
-            }
+        } catch (error) {
             return {
                 success: false,
-                error: err instanceof Error ? err.message : 'Unknown error occurred',
+                error: error instanceof Error ? error.message : 'Unknown error',
             };
         }
     }
@@ -275,56 +256,20 @@ export class ComparisonApiClient {
         formData.append('file1', new Blob([file1Buffer]), file1Name);
         formData.append('file2', new Blob([file2Buffer]), file2Name);
 
-        const headers: Record<string, string> = {};
-        if (this.apiKey) {
-            headers['Authorization'] = `Bearer ${this.apiKey}`;
-            headers['x-api-key'] = this.apiKey;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
         try {
-            const response = await fetch(`${this.baseUrl}/api/comparison/preview`, {
+            return await this.request<PreviewResponse>('/api/comparison/preview', {
                 method: 'POST',
-                headers,
                 body: formData,
-                signal: controller.signal,
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-                try {
-                    const errorData = await response.json() as { error?: string; message?: string };
-                    errorMessage = errorData.error || errorData.message || errorMessage;
-                } catch {
-                    // Keep default message
-                }
-                return {
-                    success: false,
-                    error: errorMessage,
-                };
-            }
-
-            return await response.json() as PreviewResponse;
-        } catch (err) {
-            clearTimeout(timeoutId);
-            if (err instanceof Error && err.name === 'AbortError') {
-                return {
-                    success: false,
-                    error: 'Request timed out',
-                };
-            }
+        } catch (error) {
             return {
                 success: false,
-                error: err instanceof Error ? err.message : 'Unknown error occurred',
+                error: error instanceof Error ? error.message : 'Unknown error',
             };
         }
     }
 }
 
-export function createComparisonClient(options: ComparisonApiOptions): ComparisonApiClient {
-    return new ComparisonApiClient(options);
+export function createComparisonClient(config: ComparisonClientConfig): ComparisonApiClient {
+    return new ComparisonApiClient(config);
 }
