@@ -1,6 +1,6 @@
 {
   "name": "@krutai/email-services",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Library to handle Google OAuth and Email features for ai_builder",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
