@@ -1,0 +1,19 @@
+{
+  "name": "@krutai/email-services",
+  "version": "1.0.0",
+  "description": "Library to handle Google OAuth and Email features for ai_builder",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
