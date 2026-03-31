@@ -43,6 +43,14 @@ The main export of this package is the `EmailServiceClient` class.
     -   `body` (string, required): The email body, which can be plain text or HTML.
 -   **Returns**: A `Promise` that resolves with the response from the backend service.
 
+#### `async markAsRead(tokens: any, messageId: string): Promise<any>`
+
+-   **Description**: Marks a specific email as read.
+-   **Parameters**:
+    -   `tokens` (any, required): The OAuth tokens.
+    -   `messageId` (string, required): The ID of the email message to mark as read.
+-   **Returns**: A `Promise` that resolves with the response from the backend service.
+
 ## Interfaces
 
 ### `EmailFilterOptions`
