@@ -89,4 +89,12 @@ export class EmailServiceClient {
         });
         return response.data;
     }
+
+    async markAsRead(tokens: any, messageId: string): Promise<any> {
+        const response = await this.httpClient.post('/api/email/mark-read', {
+            tokens,
+            messageId,
+        });
+        return response.data;
+    }
 }

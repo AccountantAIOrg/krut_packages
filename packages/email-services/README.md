@@ -79,3 +79,19 @@ try {
   console.error('Error sending email:', error);
 }
 ```
+
+### Marking an Email as Read
+
+You can mark a specific email as read using its message ID.
+
+```typescript
+// Assuming you have the tokens and a messageId
+const tokens = { /* ... OAuth tokens ... */ };
+const messageId = 'some-message-id';
+
+try {
+  const result = await emailClient.markAsRead(tokens, messageId);
+  console.log('Email marked as read:', result);
+} catch (error) {
+  console.error('Error marking email as read:', error);
+}
