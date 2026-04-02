@@ -4,18 +4,55 @@
 
 - **Name**: `@krutai/auth`
 - **Version**: `0.4.0`
-- **Purpose**: Fetch-based authentication client for KrutAI — calls your server's `/lib-auth` routes (powered by better-auth on the server side)
+- **Purpose**: Fetch-based authentication client for KrutAI — calls your server's `/lib-auth` routes (powered by better-auth + PostgreSQL on the server side)
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
 - **Build**: `tsup` (CJS + ESM, `krutai` external)
+
+## ⚠️ Critical Architecture Note for AI
+
+> All auth logic and database connectivity (PostgreSQL, etc.) lives on the server.
+> This package is a **pure HTTP client** that calls the server's `/lib-auth` routes.
+
+**Do NOT suggest any of the following for this package — they do not exist:**
+- `@krutai/auth/react`
+- `@krutai/auth/next-js`
+- `createAuthClient()`
+- `toNextJsHandler()`
+- `getBetterAuth()`
+- `betterAuthOptions` config key
+- `database` config key
+- Passing `new Database(...)` or `new Pool(...)` to `krutAuth()`
+
+**Do NOT suggest SQLite (`better-sqlite3`) usage.** The server side should use PostgreSQL.
 
 ## Dependency Architecture
 
 ```
 @krutai/auth@0.4.0
 └── dependency: krutai              ← API key validation (also peerDep)
+
+Your Server (separate codebase)
+├── better-auth                     ← Auth engine
+└── pg / postgres                   ← PostgreSQL adapter
 ```
 
-> **Important for AI**: This package has NO `better-auth`, `better-sqlite3`, or database dependencies. All auth logic lives on the server. This package is a pure HTTP client.
+## Full System Flow
+
+```mermaid
+sequenceDiagram
+    participant App as Consumer App (@krutai/auth)
+    participant Server as Your Server (/lib-auth)
+    participant BA as better-auth (server)
+    participant PG as PostgreSQL
+
+    App->>Server: POST /lib-auth/api/auth/sign-up/email<br/>Headers: Authorization: Bearer <apiKey>
+    Server->>Server: Validate API key
+    Server->>BA: Forward to better-auth handler
+    BA->>PG: INSERT user + session
+    PG-->>BA: OK
+    BA-->>Server: User + session
+    Server-->>App: JSON response { token, user }
+```
 
 ## File Structure
 
@@ -30,36 +67,19 @@ packages/auth/
 └── tsup.config.ts
 ```
 
-## How It Works
-
-```mermaid
-sequenceDiagram
-    participant Client as @krutai/auth
-    participant Server as Your Server (/lib-auth)
-    participant BA as better-auth (server)
-
-    Client->>Server: POST /lib-auth/api/auth/sign-up/email<br/>Headers: Authorization: Bearer <apiKey>
-    Server->>Server: Validate API key
-    Server->>BA: Forward to better-auth handler
-    BA-->>Server: User + session
-    Server-->>Client: JSON response
-```
-
 ## Main Exports
 
 ### `krutAuth(config)` ← FACTORY (recommended)
-
-Creates a `KrutAuth` instance. Mirrors `krutAI()` from `@krutai/ai-provider`.
 
 ```typescript
 import { krutAuth } from "@krutai/auth";
 
 const auth = krutAuth({
-  apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: "https://krut.ai",
+  apiKey: process.env.KRUTAI_API_KEY!,  // or set KRUTAI_API_KEY env var
+  serverUrl: "https://krut.ai",          // your server URL
 });
 
-await auth.initialize(); // validates key against server
+await auth.initialize(); // validates API key against server
 ```
 
 ### `KrutAuth` class ← CORE CLIENT
@@ -72,7 +92,7 @@ await auth.initialize(); // validates key against server
 | `getSession(token)` | `GET /lib-auth/api/auth/get-session` | Retrieve session info |
 | `signOut(token)` | `POST /lib-auth/api/auth/sign-out` | Invalidate a session |
 | `request(method, path, body?)` | Any | Generic helper for custom endpoints |
-| `isInitialized()` | — | Check if client is ready |
+| `isInitialized()` | — | Returns `boolean` |
 
 ### Types
 
@@ -94,12 +114,26 @@ interface SignInEmailParams { email: string; password: string; }
 
 #### `AuthResponse`
 ```typescript
-interface AuthResponse { token: string; user: AuthUser; }
+interface AuthResponse { token: string; user: AuthUser; [key: string]: unknown; }
+```
+
+#### `AuthUser`
+```typescript
+interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: unknown;
+}
 ```
 
 #### `AuthSession`
 ```typescript
 interface AuthSession { user: AuthUser; session: AuthSessionRecord; }
+interface AuthSessionRecord { id: string; userId: string; token: string; expiresAt: string; }
 ```
 
 ### Validator Re-exports (from `krutai`)
@@ -126,7 +160,6 @@ const { token, user } = await auth.signUpEmail({
   password: "secret123",
   name: "Alice",
 });
-console.log("Signed up:", user.email);
 
 // Sign in
 const result = await auth.signInEmail({
@@ -148,7 +181,6 @@ await auth.signOut(token);
 
 ### Example 3: Custom Endpoint
 ```typescript
-// Call any better-auth endpoint via the generic request method
 const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
   someParam: "value",
 });
@@ -159,7 +191,7 @@ const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
 import { krutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
 
 try {
-  const auth = krutAuth({ apiKey: "bad" });
+  const auth = krutAuth({ apiKey: "bad-key" });
   await auth.initialize();
 } catch (e) {
   if (e instanceof KrutAuthKeyValidationError) {
@@ -168,20 +200,76 @@ try {
 }
 ```
 
+### Example 5: Skip validation in tests
+```typescript
+const auth = krutAuth({
+  apiKey: "test-key-minimum-10-chars",
+  serverUrl: "http://localhost:8000",
+  validateOnInit: false, // Skip server round-trip
+});
+// Ready to use immediately — no initialize() needed
+```
+
+## Server-side PostgreSQL Setup (NOT in this package)
+
+When a user asks about PostgreSQL + this auth package, the Postgres config goes on the **server**, not here:
+
+```typescript
+// server: lib/auth.ts
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
+
+export const auth = betterAuth({
+  database: new Pool({ connectionString: process.env.DATABASE_URL }),
+  emailAndPassword: { enabled: true },
+  basePath: "/lib-auth",
+  baseURL: process.env.BETTER_AUTH_BASE_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+});
+```
+
+Required server env vars:
+- `DATABASE_URL` — PostgreSQL connection string (e.g. `postgresql://user:pass@host:5432/db`)
+- `BETTER_AUTH_BASE_URL` — Server base URL
+- `BETTER_AUTH_SECRET` — Session signing secret
+
+## Request Headers
+
+Every request from `KrutAuth` sends:
+```
+Content-Type: application/json
+Authorization: Bearer <apiKey>
+x-api-key: <apiKey>
+```
+
+`getSession` and `signOut` additionally send:
+```
+Cookie: better-auth.session_token=<sessionToken>
+```
+
+## Known Limitations
+
+1. **`getSession`/`signOut` use cookie-based auth** — may not work in all server-to-server contexts if the server strips cookies
+2. **`AuthResponse` is missing `session`** — better-auth returns `{ token, user, session }` but the type only declares `{ token, user }`. Access `session` via the `[key: string]: unknown` index signature
+3. **`dist/index.d.ts` may be missing** — Run `npm run build` inside `packages/auth` if TypeScript types are not resolving
+
 ## Important Notes
 
-1. **No local database**: All auth logic runs on your server — this package is a pure HTTP client
-2. **API key in headers**: Every request sends `Authorization: Bearer <key>` and `x-api-key` headers
-3. **Server prefix**: Auth routes are prefixed with `/lib-auth` by default (configurable via `authPrefix`)
-4. **Call `initialize()` first**: Must validate API key before calling auth methods
-5. **Same pattern as ai-provider**: Works identically to `KrutAIProvider` — construct, initialize, call methods
+1. **No local database** — All auth logic runs on your server — this package is a pure HTTP client
+2. **No SQLite** — Do not use `better-sqlite3` with this package or its server. Use PostgreSQL
+3. **API key in headers** — Every request sends `Authorization: Bearer <key>` and `x-api-key` headers
+4. **Server prefix** — Auth routes are prefixed with `/lib-auth` by default (configurable via `authPrefix`)
+5. **Call `initialize()` first** — Must validate API key before calling auth methods (unless `validateOnInit: false`)
+6. **Same pattern as ai-provider** — Works identically to `KrutAIProvider` — construct, initialize, call methods
 
 ## Related Packages
 
-- `krutai` — Core utilities and API validation (peer dep)
+- `krutai` — Core utilities and API key validation (peer dep)
 - `@krutai/ai-provider` — AI provider (same fetch-based pattern)
+- `@krutai/db-service` — DB config service client
 
 ## Links
 
 - GitHub: https://github.com/AccountantAIOrg/krut_packages
 - npm: https://www.npmjs.com/package/@krutai/auth
+- Better Auth PostgreSQL docs: https://www.better-auth.com/docs/adapters/postgresql

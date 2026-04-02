@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "Authentication package for KrutAI — fetch-based client for your server's auth routes with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -33,10 +33,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "krutai": ">=0.1.5"
-    },
-    "peerDependencies": {
-        "krutai": ">=0.1.5"
+        "krutai": "0.1.6"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",

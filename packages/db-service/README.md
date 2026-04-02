@@ -19,7 +19,7 @@ import { DbService } from '@krutai/db-service';
 
 const client = new DbService({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: 'http://localhost:8000', // optional
+  serverUrl: 'http://localhost:8000',
 });
 
 await client.initialize();
@@ -49,7 +49,7 @@ console.log(config.dbUrl); // postgres connection URL
 `DbServiceConfig` fields:
 
 - `apiKey` (string, required)
-- `serverUrl` (string, optional, default: `http://localhost:8000`)
+- `serverUrl` (string, required)
 - `validateOnInit` (boolean, optional, default: `true`)
 
 ## Errors
