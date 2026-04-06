@@ -1,6 +1,6 @@
 {
     "name": "@krutai/excel-comparison",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "A powerful library for comparing Excel and CSV files with intelligent column matching and difference reporting",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
