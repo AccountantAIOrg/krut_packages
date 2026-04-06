@@ -100,9 +100,14 @@ export class EmailServiceClient {
     /**
      * Get the Google OAuth login URL from the backend.
      * Use this URL to redirect the user to Google for authentication.
+     * @param frontendUrl Optional URL of the frontend application to redirect back to.
      */
-    getLoginUrl(): string {
-        return `${this.serverUrl}/api/email/auth/google`;
+    getLoginUrl(frontendUrl?: string): string {
+        const baseUrl = `${this.serverUrl}/api/email/auth/google`;
+        if (frontendUrl) {
+            return `${baseUrl}?frontendUrl=${encodeURIComponent(frontendUrl)}`;
+        }
+        return baseUrl;
     }
 
     /**
