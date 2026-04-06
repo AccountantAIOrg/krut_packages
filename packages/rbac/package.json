@@ -1,6 +1,6 @@
 {
     "name": "@krutai/rbac",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Role-Based Access Control (RBAC) library for KrutAI",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -35,12 +35,12 @@
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^20.11.0",
-        "krutai": ">=0.1.5",
+        "krutai": "^0.1.7",
         "tsup": "^8.0.1",
         "typescript": "^5.3.3"
     },
     "peerDependencies": {
-        "krutai": ">=0.1.5",
+        "krutai": "^0.1.7",
         "@krutai/auth": ">=0.2.5"
     },
     "peerDependenciesMeta": {
