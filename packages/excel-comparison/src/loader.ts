@@ -57,6 +57,14 @@ export class DataLoader {
         throw new Error(`Unsupported file type: ${ext}. Only Excel (.xlsx, .xls) and CSV files are supported.`);
     }
 
+    static async jsonToExcelBuffer(data: DataRecord[], sheetName: string = 'Sheet1'): Promise<Buffer> {
+        const XLSX = await import('xlsx');
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    }
+
     static getColumnNames(data: DataRecord[]): string[] {
         if (data.length === 0) return [];
         return Object.keys(data[0]);
