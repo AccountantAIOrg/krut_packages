@@ -62,8 +62,10 @@ export {
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
+    validateApiKey,
     createApiKeyChecker,
     ApiKeyValidationError,
+    KrutAIKeyValidationError,
 } from 'krutai';
 
 // Package metadata

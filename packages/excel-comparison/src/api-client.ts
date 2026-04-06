@@ -1,3 +1,11 @@
+import {
+    validateApiKey,
+    validateApiKeyFormat,
+    KrutAIKeyValidationError,
+} from 'krutai';
+
+export { KrutAIKeyValidationError };
+
 export interface ComparisonClientConfig {
     /**
      * KrutAI API key.
@@ -75,7 +83,7 @@ export interface ComparisonApiResponse {
 
 export class ComparisonApiClient {
     private serverUrl: string;
-    private apiKey?: string;
+    private apiKey: string;
     private timeout: number;
     private initialized = false;
     private validateOnInit: boolean;
@@ -83,9 +91,12 @@ export class ComparisonApiClient {
 
     constructor(config: ComparisonClientConfig) {
         this.serverUrl = (config.serverUrl || 'http://localhost:8000').replace(/\/$/, '');
-        this.apiKey = config.apiKey || (typeof process !== 'undefined' ? process.env.KRUTAI_API_KEY : undefined);
+        this.apiKey = config.apiKey || (typeof process !== 'undefined' ? process.env.KRUTAI_API_KEY : '') || '';
         this.timeout = config.timeout ?? 60000;
         this.validateOnInit = config.validateOnInit ?? true;
+
+        // Basic format check
+        validateApiKeyFormat(this.apiKey);
 
         if (!this.validateOnInit) {
             this.initialized = true;
@@ -95,52 +106,15 @@ export class ComparisonApiClient {
     /**
      * Initialize the client.
      * Validates the API key against the server if validateOnInit is true.
-     * @throws {Error} If validation fails or API key is missing
+     * @throws {KrutAIKeyValidationError} If validation fails
      */
     async initialize(): Promise<void> {
         if (this.initialized) return;
         if (this.initializationPromise) return this.initializationPromise;
 
         this.initializationPromise = (async () => {
-            if (!this.apiKey || this.apiKey.trim().length === 0) {
-                this.initializationPromise = null;
-                throw new Error('No API key provided. Please set the KRUTAI_API_KEY environment variable or pass it in the config.');
-            }
-
-            try {
-                // Call the validation endpoint - standard across KrutAI services
-                const url = `${this.serverUrl}/validate`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': this.apiKey,
-                    },
-                    body: JSON.stringify({ apiKey: this.apiKey }),
-                });
-
-                if (!response.ok) {
-                    let errorMessage = `API key validation failed (HTTP ${response.status})`;
-                    try {
-                        const errorData = await response.json() as { error?: string; message?: string };
-                        errorMessage = errorData.error || errorData.message || errorMessage;
-                    } catch {
-                        // Keep default
-                    }
-                    throw new Error(errorMessage);
-                }
-
-                const data = await response.json() as { valid?: boolean };
-                if (data.valid === false) {
-                    throw new Error('Invalid API key provided.');
-                }
-
-                this.initialized = true;
-            } catch (err) {
-                this.initializationPromise = null;
-                if (err instanceof Error) throw err;
-                throw new Error('Failed to validate API key with the server.');
-            }
+            await validateApiKey(this.apiKey, this.serverUrl);
+            this.initialized = true;
         })();
 
         return this.initializationPromise;

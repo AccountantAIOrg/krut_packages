@@ -7,12 +7,12 @@ import type {
 } from './types';
 import { DEFAULT_SERVER_URL, DEFAULT_AUTH_PREFIX } from './types';
 import {
-    validateApiKeyWithService as validateApiKey,
+    validateApiKey,
     validateApiKeyFormat,
-    ApiKeyValidationError as KrutAuthKeyValidationError,
+    KrutAIKeyValidationError,
 } from 'krutai';
 
-export { KrutAuthKeyValidationError };
+export { KrutAIKeyValidationError };
 
 /**
  * KrutAuth — fetch-based authentication client for KrutAI

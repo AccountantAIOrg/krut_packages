@@ -26,6 +26,8 @@ export * from './types';
 export {
     validateApiKeyFormat,
     validateApiKeyWithService,
+    validateApiKeyWithService as validateApiKey,
     createApiKeyChecker,
     ApiKeyValidationError,
+    ApiKeyValidationError as KrutAIKeyValidationError,
 } from './validator';

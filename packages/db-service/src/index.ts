@@ -1,9 +1,10 @@
-export class DbServiceKeyValidationError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'DbServiceKeyValidationError';
-    }
-}
+import {
+    validateApiKey,
+    validateApiKeyFormat,
+    KrutAIKeyValidationError,
+} from 'krutai';
+
+export { KrutAIKeyValidationError };
 
 export interface DbServiceConfig {
     apiKey: string;
@@ -22,74 +23,6 @@ export interface DbConfigResponse {
 
 export const DEFAULT_SERVER_URL = 'http://localhost:8000';
 export const DEFAULT_DB_MANAGE_PREFIX = '/db-manage';
-
-export function validateApiKeyFormat(apiKey?: string): void {
-    const key = apiKey || process.env.KRUTAI_API_KEY;
-
-    if (!key || typeof key !== 'string') {
-        throw new DbServiceKeyValidationError('API key must be a non-empty string');
-    }
-
-    if (key.trim().length === 0) {
-        throw new DbServiceKeyValidationError('API key cannot be empty or whitespace');
-    }
-}
-
-export async function validateApiKeyWithService(
-    apiKey?: string,
-    serverUrl: string = DEFAULT_SERVER_URL
-): Promise<boolean> {
-    const key = apiKey || process.env.KRUTAI_API_KEY;
-    if (!key) {
-        throw new DbServiceKeyValidationError('API key is required');
-    }
-
-    validateApiKeyFormat(key);
-
-    try {
-        const url = `${serverUrl.replace(/\/$/, '')}/validate`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': key,
-            },
-            body: JSON.stringify({ apiKey: key }),
-        });
-
-        let data: { valid?: boolean; message?: string; error?: string } = {};
-        try {
-            data = (await response.json()) as {
-                valid?: boolean;
-                message?: string;
-                error?: string;
-            };
-        } catch {
-            // Ignore parsing errors for non-JSON responses
-        }
-
-        if (!response.ok) {
-            throw new DbServiceKeyValidationError(
-                data.error ||
-                    data.message ||
-                    `API key validation failed: server responded with HTTP ${response.status}`
-            );
-        }
-
-        if (data.valid === false) {
-            throw new DbServiceKeyValidationError(
-                data.error ?? data.message ?? 'API key rejected by server'
-            );
-        }
-
-        return true;
-    } catch (error) {
-        if (error instanceof DbServiceKeyValidationError) throw error;
-        throw new DbServiceKeyValidationError(
-            `Failed to reach validation endpoint: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-    }
-}
 
 export class DbService {
     private readonly apiKey: string;
@@ -115,7 +48,7 @@ export class DbService {
         if (this.initialized) return;
 
         if (this.config.validateOnInit !== false) {
-            await validateApiKeyWithService(this.apiKey, this.serverUrl);
+            await validateApiKey(this.apiKey, this.serverUrl);
         }
 
         this.initialized = true;

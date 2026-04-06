@@ -43,9 +43,9 @@ import type { KrutAuthConfig } from './types';
 import { KrutAuth } from './client';
 
 export { KrutAuth } from './client';
-export { KrutAuthKeyValidationError } from './client';
+export { KrutAIKeyValidationError } from './client';
 export {
-    validateApiKeyWithService as validateApiKey,
+    validateApiKey,
     validateApiKeyFormat,
 } from 'krutai';
 export type {

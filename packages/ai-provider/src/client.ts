@@ -5,9 +5,9 @@ import type {
 } from './types';
 import { DEFAULT_MODEL, DEFAULT_SERVER_URL } from './types';
 import {
-    validateApiKeyWithService as validateApiKey,
+    validateApiKey,
     validateApiKeyFormat,
-    ApiKeyValidationError as KrutAIKeyValidationError,
+    KrutAIKeyValidationError,
 } from 'krutai';
 
 export { KrutAIKeyValidationError };

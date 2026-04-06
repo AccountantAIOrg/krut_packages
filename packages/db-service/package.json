@@ -1,6 +1,6 @@
 {
   "name": "@krutai/db-service",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "DB service client for KrutAI",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -29,6 +29,12 @@
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "krutai": ">=0.1.5"
+  },
+  "peerDependencies": {
+    "krutai": ">=0.1.5"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "tsup": "^8.0.1",
