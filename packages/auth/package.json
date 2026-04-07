@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "description": "Authentication package for KrutAI — fetch-based client for your server's auth routes with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

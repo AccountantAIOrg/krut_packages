@@ -212,12 +212,13 @@ export class KrutAuth {
     async getSession(sessionToken: string): Promise<AuthSession> {
         this.assertInitialized();
 
+        const headers = this.authHeaders();
+        // Send the session token as a Bearer token so better-auth's bearer() plugin can extract it.
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+        
         const response = await fetch(this.url('/api/auth/get-session'), {
             method: 'GET',
-            headers: {
-                ...this.authHeaders(),
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
+            headers,
         });
 
         if (!response.ok) {
@@ -243,12 +244,13 @@ export class KrutAuth {
     async signOut(sessionToken: string): Promise<void> {
         this.assertInitialized();
 
+        const headers = this.authHeaders();
+        // Send the session token as a Bearer token so better-auth's bearer() plugin can extract it.
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+
         const response = await fetch(this.url('/api/auth/sign-out'), {
             method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
+            headers,
         });
 
         if (!response.ok) {

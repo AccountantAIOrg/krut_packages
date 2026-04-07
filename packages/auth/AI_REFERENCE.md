@@ -3,7 +3,7 @@
 ## Package Overview
 
 - **Name**: `@krutai/auth`
-- **Version**: `0.4.0`
+- **Version**: `0.4.4`
 - **Purpose**: Fetch-based authentication client for KrutAI — calls your server's `/lib-auth` routes (powered by better-auth + PostgreSQL on the server side)
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
 - **Build**: `tsup` (CJS + ESM, `krutai` external)
@@ -45,9 +45,9 @@ sequenceDiagram
     participant BA as better-auth (server)
     participant PG as PostgreSQL
 
-    App->>Server: POST /lib-auth/api/auth/sign-up/email<br/>Headers: Authorization: Bearer <apiKey>
+    App->>Server: POST /lib-auth/api/auth/sign-up/email<br/>Headers: Authorization: Bearer <apiKey> + x-database-url
     Server->>Server: Validate API key
-    Server->>BA: Forward to better-auth handler
+    Server->>BA: Forward to better-auth handler with DB URL
     BA->>PG: INSERT user + session
     PG-->>BA: OK
     BA-->>Server: User + session
@@ -69,14 +69,15 @@ packages/auth/
 
 ## Main Exports
 
-### `krutAuth(config)` ← FACTORY (recommended)
+### `KrutAuth` class ← CORE CLIENT (FACTORY)
 
 ```typescript
-import { krutAuth } from "@krutai/auth";
+import { KrutAuth } from "@krutai/auth";
 
-const auth = krutAuth({
+const auth = new KrutAuth({
   apiKey: process.env.KRUTAI_API_KEY!,  // or set KRUTAI_API_KEY env var
   serverUrl: "https://krut.ai",          // your server URL
+  databaseUrl: process.env.DATABASE_URL, // optional: DB connection
 });
 
 await auth.initialize(); // validates API key against server
@@ -102,6 +103,7 @@ interface KrutAuthConfig {
   apiKey?: string;          // defaults to process.env.KRUTAI_API_KEY
   serverUrl?: string;       // default: "http://localhost:8000"
   authPrefix?: string;      // default: "/lib-auth"
+  databaseUrl?: string;     // default: process.env.DATABASE_URL (sent as x-database-url)
   validateOnInit?: boolean; // default: true
 }
 ```
@@ -146,11 +148,12 @@ export { validateApiKeyFormat, validateApiKey } from 'krutai';
 
 ### Example 1: Sign Up + Sign In
 ```typescript
-import { krutAuth } from "@krutai/auth";
+import { KrutAuth } from "@krutai/auth";
 
-const auth = krutAuth({
+const auth = new KrutAuth({
   apiKey: process.env.KRUTAI_API_KEY!,
   serverUrl: "https://krut.ai",
+  databaseUrl: process.env.DATABASE_URL,
 });
 await auth.initialize();
 
@@ -188,10 +191,10 @@ const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
 
 ### Example 4: Error Handling
 ```typescript
-import { krutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
+import { KrutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
 
 try {
-  const auth = krutAuth({ apiKey: "bad-key" });
+  const auth = new KrutAuth({ apiKey: "bad-key" });
   await auth.initialize();
 } catch (e) {
   if (e instanceof KrutAuthKeyValidationError) {
@@ -202,36 +205,15 @@ try {
 
 ### Example 5: Skip validation in tests
 ```typescript
-const auth = krutAuth({
+import { KrutAuth } from "@krutai/auth";
+
+const auth = new KrutAuth({
   apiKey: "test-key-minimum-10-chars",
   serverUrl: "http://localhost:8000",
   validateOnInit: false, // Skip server round-trip
 });
 // Ready to use immediately — no initialize() needed
 ```
-
-## Server-side PostgreSQL Setup (NOT in this package)
-
-When a user asks about PostgreSQL + this auth package, the Postgres config goes on the **server**, not here:
-
-```typescript
-// server: lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({ connectionString: process.env.DATABASE_URL }),
-  emailAndPassword: { enabled: true },
-  basePath: "/lib-auth",
-  baseURL: process.env.BETTER_AUTH_BASE_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
-});
-```
-
-Required server env vars:
-- `DATABASE_URL` — PostgreSQL connection string (e.g. `postgresql://user:pass@host:5432/db`)
-- `BETTER_AUTH_BASE_URL` — Server base URL
-- `BETTER_AUTH_SECRET` — Session signing secret
 
 ## Request Headers
 
@@ -240,16 +222,18 @@ Every request from `KrutAuth` sends:
 Content-Type: application/json
 Authorization: Bearer <apiKey>
 x-api-key: <apiKey>
+x-database-url: <databaseUrl>  (only if configured)
 ```
 
-`getSession` and `signOut` additionally send:
+`getSession` and `signOut` replace the `Authorization` header with the user's session token:
 ```
-Cookie: better-auth.session_token=<sessionToken>
+Authorization: Bearer <sessionToken>
 ```
+This requires `better-auth` to have the `bearer()` plugin enabled on the server or be configured to accept tokens from headers.
 
 ## Known Limitations
 
-1. **`getSession`/`signOut` use cookie-based auth** — may not work in all server-to-server contexts if the server strips cookies
+1. **`getSession`/`signOut` use `Authorization: Bearer`** — The server must be configured to handle tokens in the `Authorization` header (e.g. via better-auth's `bearer()` plugin)
 2. **`AuthResponse` is missing `session`** — better-auth returns `{ token, user, session }` but the type only declares `{ token, user }`. Access `session` via the `[key: string]: unknown` index signature
 3. **`dist/index.d.ts` may be missing** — Run `npm run build` inside `packages/auth` if TypeScript types are not resolving
 

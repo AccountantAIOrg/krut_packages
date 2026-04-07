@@ -33,52 +33,13 @@ All database operations (user storage, session management, etc.) happen on your 
 
 ## Quick Start
 
-### 1. Server-side setup (PostgreSQL + Better Auth)
-
-Set up Better Auth on your server with a PostgreSQL database:
-
 ```typescript
-// server: lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { KrutAuth } from "@krutai/auth";
 
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // e.g. postgresql://user:password@localhost:5432/mydb
-  }),
-  emailAndPassword: {
-    enabled: true,
-  },
-  basePath: "/lib-auth",
-  baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:8000",
-  secret: process.env.BETTER_AUTH_SECRET,
-});
-```
-
-> **Required env vars on your server:**
-> - `DATABASE_URL` — PostgreSQL connection string
-> - `BETTER_AUTH_BASE_URL` — Your server's base URL (e.g. `http://localhost:8000`)
-> - `BETTER_AUTH_SECRET` — Secret for signing sessions
-
-### 2. Mount the auth handler on your server
-
-```typescript
-// server: routes/auth.ts (Express example)
-import { toNodeHandler } from "better-auth/node";
-import { auth } from "./lib/auth";
-
-app.use("/lib-auth", toNodeHandler(auth));
-```
-
-### 3. Use `@krutai/auth` in your client/consumer app
-
-```typescript
-import { krutAuth } from "@krutai/auth";
-
-const auth = krutAuth({
+const auth = new KrutAuth({
   apiKey: process.env.KRUTAI_API_KEY!,
-  serverUrl: "https://your-server.com", // points to the server above
+  serverUrl: "https://your-server.com",
+  databaseUrl: process.env.DATABASE_URL!, // sent as x-database-url
 });
 
 await auth.initialize(); // validates API key against server
@@ -106,10 +67,13 @@ await auth.signOut(result.token);
 ## Configuration
 
 ```typescript
-const auth = krutAuth({
+import { KrutAuth } from "@krutai/auth";
+
+const auth = new KrutAuth({
   apiKey: "krut_...",          // Required (or set KRUTAI_API_KEY env var)
   serverUrl: "https://...",    // Default: "http://localhost:8000"
   authPrefix: "/lib-auth",     // Default: "/lib-auth"
+  databaseUrl: "...",          // Optional: DB connection for better-auth
   validateOnInit: true,        // Default: true — set false to skip in tests
 });
 ```
@@ -119,17 +83,20 @@ const auth = krutAuth({
 | `apiKey` | `string` | `process.env.KRUTAI_API_KEY` | Your KrutAI API key |
 | `serverUrl` | `string` | `http://localhost:8000` | Base URL of your server |
 | `authPrefix` | `string` | `/lib-auth` | Path prefix for auth routes |
+| `databaseUrl` | `string` | `process.env.DATABASE_URL` | Database URL sent to server |
 | `validateOnInit` | `boolean` | `true` | Validate API key on `initialize()` |
 
 ## API Reference
 
-### `krutAuth(config)` — Factory (recommended)
-
 Creates a `KrutAuth` instance.
 
 ```typescript
-import { krutAuth } from "@krutai/auth";
-const auth = krutAuth({ apiKey: "...", serverUrl: "https://..." });
+import { KrutAuth } from "@krutai/auth";
+const auth = new KrutAuth({
+  apiKey: "...",
+  serverUrl: "https://...",
+  databaseUrl: "...",
+});
 await auth.initialize();
 ```
 
@@ -167,22 +134,15 @@ interface AuthUser {
 | Variable | Required | Description |
 |---|---|---|
 | `KRUTAI_API_KEY` | ✅ | Your KrutAI API key |
-
-### Server (where Better Auth + PostgreSQL runs)
-
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `BETTER_AUTH_BASE_URL` | ✅ | Your server's base URL |
-| `BETTER_AUTH_SECRET` | recommended | Secret for signing sessions |
+| `DATABASE_URL` | optional | Sent as `x-database-url` header |
 
 ## Error Handling
 
 ```typescript
-import { krutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
+import { KrutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
 
 try {
-  const auth = krutAuth({ apiKey: "invalid-key" });
+  const auth = new KrutAuth({ apiKey: "invalid-key" });
   await auth.initialize();
 } catch (e) {
   if (e instanceof KrutAuthKeyValidationError) {
@@ -206,7 +166,9 @@ const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
 ## Skipping Validation in Tests
 
 ```typescript
-const auth = krutAuth({
+import { KrutAuth } from "@krutai/auth";
+
+const auth = new KrutAuth({
   apiKey: "test-api-key",
   serverUrl: "http://localhost:8000",
   validateOnInit: false, // Skip server round-trip in tests
