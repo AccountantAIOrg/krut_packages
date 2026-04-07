@@ -52,6 +52,7 @@ export class KrutAuth {
     private readonly apiKey: string;
     private readonly serverUrl: string;
     private readonly authPrefix: string;
+    private readonly databaseUrl: string;
     private readonly config: KrutAuthConfig;
 
     private initialized = false;
@@ -61,6 +62,7 @@ export class KrutAuth {
         this.apiKey = config.apiKey || process.env.KRUTAI_API_KEY || '';
         this.serverUrl = (config.serverUrl ?? DEFAULT_SERVER_URL).replace(/\/$/, '');
         this.authPrefix = (config.authPrefix ?? DEFAULT_AUTH_PREFIX).replace(/\/$/, '');
+        this.databaseUrl = config.databaseUrl || process.env.DATABASE_URL || '';
 
         // Basic format check immediately on construction
         validateApiKeyFormat(this.apiKey);
@@ -108,11 +110,17 @@ export class KrutAuth {
 
     /** Common request headers sent to the server on every auth call. */
     private authHeaders(): Record<string, string> {
-        return {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${this.apiKey}`,
             'x-api-key': this.apiKey,
         };
+
+        if (this.databaseUrl) {
+            headers['x-database-url'] = this.databaseUrl;
+        }
+
+        return headers;
     }
 
     /**

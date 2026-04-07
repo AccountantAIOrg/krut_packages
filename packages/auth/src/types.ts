@@ -46,6 +46,11 @@ export interface KrutAuthConfig {
      * @default true
      */
     validateOnInit?: boolean;
+
+    /**
+     * Database URL to be passed to the backend for better-auth
+     */
+    databaseUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
