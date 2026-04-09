@@ -28,7 +28,7 @@ const emailClient = new EmailServiceClient({
 The email service uses OAuth for authentication. To start the process, get the login URL and redirect the user to it.
 
 ```typescript
-const loginUrl = emailClient.getLoginUrl('frontendUrl?: string');
+const loginUrl = emailClient.getLoginUrl('http://localhost:3000/your-callback-path'); // Pass your full callback URL here
 // Redirect the user to loginUrl
 window.location.href = loginUrl;
 ```

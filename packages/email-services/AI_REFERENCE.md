@@ -20,11 +20,11 @@ The main export of this package is the `EmailServiceClient` class.
 
 ### Methods
 
-#### `getLoginUrl(frontendUrl?: string): string`
+#### `getLoginUrl(callbackUrl?: string): string`
 
 -   **Description**: Returns the Google OAuth login URL from the backend. The application should redirect the user to this URL to initiate the authentication flow.
 -   **Parameters**:
-    -   `frontendUrl` (string, optional): The URL where the user should be redirected after successful authentication.
+    -   `callbackUrl` (string, optional): The complete callback URL where the user should be redirected after successful authentication (e.g., `http://localhost:3000/email-check`).
 -   **Returns**: A string containing the full URL for Google authentication.
 
 #### `async readEmail(tokens: any, filters?: EmailFilterOptions): Promise<EmailData>`
