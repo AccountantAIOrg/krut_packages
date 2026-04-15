@@ -11,6 +11,7 @@
         "build:krutai": "npm run build -w packages/krutai",
         "build:auth": "npm run build -w packages/auth",
         "build:rbac": "npm run build -w packages/rbac",
+        "build:worker": "npm run build --workspace=packages/worker",
         "clean": "npm run clean --workspaces --if-present",
         "typecheck": "npm run typecheck --workspaces --if-present",
         "typecheck:rbac": "npm run typecheck -w packages/rbac",
