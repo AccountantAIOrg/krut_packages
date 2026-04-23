@@ -59,6 +59,7 @@ export type {
     KrutAIProviderConfig,
     GenerateOptions,
     ChatMessage,
+    LiveConnectionOptions,
     DataRecord,
     FileSchema,
     ComparisonSummary,
@@ -103,3 +104,4 @@ export function krutAI(
 
 // Package metadata
 export const VERSION = '0.3.4';
+

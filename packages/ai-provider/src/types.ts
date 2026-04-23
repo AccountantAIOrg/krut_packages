@@ -197,3 +197,25 @@ export interface GenerateOptions {
      */
     output_structure?: any;
 }
+
+/**
+ * Options for getLiveConnection
+ */
+export interface LiveConnectionOptions {
+    /**
+     * Room name for the LiveKit session.
+     */
+    room?: string;
+    /**
+     * Participant identity.
+     */
+    participant?: string;
+    /**
+     * AI system prompt / instructions.
+     */
+    instructions?: string;
+    /**
+     * Voice name.
+     */
+    voice?: string;
+}

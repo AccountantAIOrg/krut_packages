@@ -56,7 +56,8 @@ export async function validateApiKeyWithService(
     validateApiKeyFormat(key);
 
     try {
-        const url = `${serverUrl.replace(/\/$/, '')}/validate`;
+        const url = `${serverUrl.replace(/\/$/, '')}/api/validate`;
+        console.log("[Krutai Library] url is", url);
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -65,6 +66,8 @@ export async function validateApiKeyWithService(
             },
             body: JSON.stringify({ apiKey: key }),
         });
+
+        console.log("[Krutai Library] response is ", response);
 
         let data: { valid?: boolean; message?: string; error?: string } = {};
         try {

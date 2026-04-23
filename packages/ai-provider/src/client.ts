@@ -118,6 +118,37 @@ export class KrutAIProvider {
     // ---------------------------------------------------------------------------
 
     /**
+     * Retrieves the LiveKit connection details to connect to the Gemini Live API agent.
+     * Use the returned `url` and `token` with `@livekit/components-react`.
+     *
+     * @param options - Optional room and participant names
+     */
+    async getLiveConnection(options?: { room?: string; participant?: string; instructions?: string; voice?: string }): Promise<{ url: string; token: string }> {
+        this.assertInitialized();
+
+        const params = new URLSearchParams();
+        if (options?.room) params.set('room', options.room);
+        if (options?.participant) params.set('participant', options.participant);
+        if (options?.instructions) params.set('instructions', options.instructions);
+        if (options?.voice) params.set('voice', options.voice);
+
+        const response = await fetch(`${this.serverUrl}/live?${params.toString()}`, {
+            method: 'GET',
+            headers: this.authHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to get LiveKit connection: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return {
+            url: data.url,
+            token: data.token,
+        };
+    }
+
+    /**
      * Similar to streamChat() but returns the raw fetch Response object.
      * Useful for proxying the Server-Sent Events stream directly to a frontend client.
      *

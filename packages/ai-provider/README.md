@@ -8,6 +8,7 @@ AI provider package for KrutAI — fetch-based client form our deployed server.
 - 🚀 **Zero SDK dependencies** — uses native `fetch` only
 - 📡 **Streaming** — SSE-based streaming via async generator
 - 💬 **Multi-turn chat** — full conversation history support
+- 🎙️ **Live Conversation** — real-time voice via LiveKit
 - ⚙️ **Configurable** — pass any model name to the server
 
 ## Installation
@@ -172,6 +173,160 @@ const ai = krutAI({
 const text = await ai.chat('Hello!');
 ```
 
+## Live Conversation (Real-time Voice)
+
+This library supports real-time voice conversations using Gemini Live API via LiveKit. It provides a `getLiveConnection` method that returns LiveKit connection details (URL and token) which you can use with `@livekit/components-react` in your frontend.
+
+### Basic Usage
+
+```typescript
+import { krutAI } from '@krutai/ai-provider';
+
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+  serverUrl: 'http://localhost:8000',
+});
+
+await ai.initialize();
+
+// Get LiveKit connection details
+const { url, token } = await ai.getLiveConnection({
+  room: 'my-voice-room',
+  participant: 'user',
+});
+
+// Use with LiveKit components
+// <LiveKitRoom serverUrl={url} token={token} ... />
+```
+
+### With Custom Instructions and Voice
+
+You can customize the AI's behavior and voice:
+
+```typescript
+const ai = krutAI({
+  apiKey: process.env.KRUTAI_API_KEY!,
+});
+
+await ai.initialize();
+
+const { url, token } = await ai.getLiveConnection({
+  room: 'support-agent-room',
+  participant: 'customer',
+  instructions: 'You are a helpful customer support agent.', // AI personality
+  voice: 'Puck', // Voice name (see available voices below)
+});
+```
+
+### Available Voices
+
+The following voices are supported:
+
+| Voice Name | Description |
+|------------|-------------|
+| `Puck` | Default voice |
+| `Zephyr` | Light and airy |
+| `Charon` | Deep and authoritative |
+| `Kore` | Warm and conversational |
+| `Fenrir` | Strong and bold |
+| `Leda` | Soft and friendly |
+| `Orus` | Clear and professional |
+| `Aoede` | Expressive |
+| `Callirrhoe` | Rich and full |
+| `Autonoe` | Friendly |
+| `Enceladus` | Deep |
+| `Iapetus` | Professional |
+| `Umbriel` | Mellow |
+| `Algieba` | Warm |
+| `Despina` | Light |
+| `Erinome` | Soft |
+| `Algenib` | Clear |
+| `Rasalgethi` | Strong |
+| `Laomedeia` | Expressive |
+| `Achernar` | Deep |
+| `Alnilam` | Professional |
+| `Schedar` | Authoritative |
+| `Gacrux` | Warm |
+| `Pulcherrima` | Elegant |
+| `Achird` | Friendly |
+
+### Integration with LiveKit Components
+
+Here's a complete example with Next.js and LiveKit:
+
+```typescript
+// app/live/page.tsx
+'use client';
+
+import { useState } from 'react';
+import { KrutAIProvider } from '@krutai/ai-provider';
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  BarVisualizer,
+  VoiceAssistantControlBar,
+  useVoiceAssistant,
+  useConnectionState,
+} from '@livekit/components-react';
+import '@livekit/components-styles';
+
+export default function LivePage() {
+  const [connectionDetails, setConnectionDetails] = useState<{ url: string; token: string } | null>(null);
+
+ const startCall = async () => {
+    try {
+      setError(null);
+      setIsConnecting(true);
+      
+      const ai = new KrutAIProvider({
+        apiKey: process.env.KRUTAI_API_KEY || '',
+        serverUrl: process.env.KRUTAI_SERVER_URL || 'http://localhost:8000',
+      });
+
+      await ai.initialize();
+
+      // Fetch LiveKit connection details instead of using websocket directly
+      const details = await ai.getLiveConnection({
+        room: `room-${Math.floor(Math.random() * 10000)}`,
+        participant: 'user',
+        instructions: 'You are a helpful assistant',
+        voice: 'Puck',
+      });
+
+      setConnectionDetails(details);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const endCall = () => {
+    setConnectionDetails(null);
+  };
+
+  return (
+    <div>
+      {!connectionDetails ? (
+        <button onClick={startCall}>Start Call</button>
+      ) : (
+      <LiveKitRoom
+            serverUrl={connectionDetails.url}
+            token={connectionDetails.token}
+            connect={true}
+            audio={true}
+            video={false}
+            onDisconnected={endCall}
+          >
+            <VoiceAssistantUI />
+            <RoomAudioRenderer />
+          </LiveKitRoom>
+      )}
+    </div>
+  );
+}
+```
+
 ## Server API Contract
 
 Your LangChain server must expose these endpoints:
@@ -181,12 +336,15 @@ Your LangChain server must expose these endpoints:
 | `/validate` | POST | `x-api-key` header | `{ "apiKey": "..." }` |
 | `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "isStructure": boolean, "output_structure": any, ... }` |
 | `/stream` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
+| `/live` | GET | `Authorization: Bearer <key>` | Query params: `room`, `participant`, `instructions`, `voice` |
 
 **Validation response:** `{ "valid": true }` or `{ "valid": false, "message": "reason" }`
 
 **AI response:** `{ "text": "..." }` or `{ "content": "..." }` or `{ "message": "..." }`
 
 **Stream:** `text/event-stream` with `data: <chunk>` lines, ending with `data: [DONE]`
+
+**Live connection:** `{ "url": "...", "token": "..." }`
 
 ## API Reference
 
@@ -211,7 +369,27 @@ Full class API with the same methods as above. Use when you need the class direc
 
 ```typescript
 export { krutAI, KrutAIProvider, KrutAIKeyValidationError, validateApiKey, validateApiKeyFormat, DEFAULT_MODEL };
-export type { KrutAIProviderConfig, GenerateOptions, ChatMessage };
+export type { KrutAIProviderConfig, GenerateOptions, ChatMessage, LiveConnectionOptions };
+```
+
+### `getLiveConnection(options?)`
+
+Get LiveKit connection details for real-time voice conversation.
+
+```typescript
+interface LiveConnectionOptions {
+  room?: string;          // Room name (default: 'gemini-room')
+  participant?: string;  // Participant identity (default: random)
+  instructions?: string; // AI system prompt (default: 'You are a helpful assistant')
+  voice?: string;      // Voice name (default: 'Puck')
+}
+
+// Returns LiveKit connection details
+const { url, token } = await ai.getLiveConnection({
+  room: 'my-room',
+  instructions: 'You are a helpful assistant.',
+  voice: 'Kore',
+});
 ```
 
 ## License
