@@ -9,6 +9,7 @@ AI provider package for KrutAI — fetch-based client form our deployed server.
 - 📡 **Streaming** — SSE-based streaming via async generator
 - 💬 **Multi-turn chat** — full conversation history support
 - 🎙️ **Live Conversation** — real-time voice via LiveKit
+- 🔊 **Text-to-Speech (TTS)** — convert text to audio with high-quality voices
 - ⚙️ **Configurable** — pass any model name to the server
 
 ## Installation
@@ -327,6 +328,35 @@ export default function LivePage() {
 }
 ```
 
+## Text-to-Speech (TTS)
+
+Convert text to speech using the Gemini TTS API. This returns base64-encoded audio content that can be played directly in the browser or saved to a file.
+
+### Basic Usage
+
+```typescript
+const { audioContent, audioMimeType } = await ai.tts('Hello, how can I help you today?', {
+  voice: 'Kore',
+  speakingRate: 1.1,
+});
+
+// Play in browser
+const audio = new Audio(`data:${audioMimeType};base64,${audioContent}`);
+audio.play();
+```
+
+### TTS Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `voice` | `string` | `Charon` | Voice name (see voices list in Live section) |
+| `prompt` | `string` | - | Style prompt (e.g., "Speak with excitement") |
+| `encoding` | `string` | `MP3` | `MP3`, `LINEAR16`, or `OGG_OPUS` |
+| `languageCode`| `string` | `en-US` | Language code (e.g., `en-US`, `es-ES`) |
+| `speakingRate`| `number` | `1.0` | Rate (0.25 to 4.0) |
+| `pitch` | `number` | `0` | Pitch in semitones (-12.0 to 12.0) |
+| `volumeGainDb`| `number` | `0` | Volume gain in dB (-96.0 to 16.0) |
+
 ## Server API Contract
 
 Your LangChain server must expose these endpoints:
@@ -337,6 +367,7 @@ Your LangChain server must expose these endpoints:
 | `/generate` | POST | `Authorization: Bearer <key>` | `{ "prompt": "...", "isStructure": boolean, "output_structure": any, ... }` |
 | `/stream` | POST | `Authorization: Bearer <key>` | `{ "messages": [...], "model": "...", ... }` |
 | `/live` | GET | `Authorization: Bearer <key>` | Query params: `room`, `participant`, `instructions`, `voice` |
+| `/tts` | POST | `Authorization: Bearer <key>` | `{ "text": "...", "voice": "...", ... }` |
 
 **Validation response:** `{ "valid": true }` or `{ "valid": false, "message": "reason" }`
 
@@ -345,6 +376,8 @@ Your LangChain server must expose these endpoints:
 **Stream:** `text/event-stream` with `data: <chunk>` lines, ending with `data: [DONE]`
 
 **Live connection:** `{ "url": "...", "token": "..." }`
+
+**TTS response:** `{ "audioContent": "...", "audioMimeType": "..." }`
 
 ## API Reference
 
@@ -369,7 +402,7 @@ Full class API with the same methods as above. Use when you need the class direc
 
 ```typescript
 export { krutAI, KrutAIProvider, KrutAIKeyValidationError, validateApiKey, validateApiKeyFormat, DEFAULT_MODEL };
-export type { KrutAIProviderConfig, GenerateOptions, ChatMessage, LiveConnectionOptions };
+export type { KrutAIProviderConfig, GenerateOptions, ChatMessage, LiveConnectionOptions, TTSOptions, TTSResponse };
 ```
 
 ### `getLiveConnection(options?)`
@@ -389,6 +422,27 @@ const { url, token } = await ai.getLiveConnection({
   room: 'my-room',
   instructions: 'You are a helpful assistant.',
   voice: 'Kore',
+});
+```
+
+### `tts(text, options?)`
+
+Convert text to speech.
+
+```typescript
+interface TTSOptions {
+  voice?: string;
+  prompt?: string;
+  encoding?: 'MP3' | 'LINEAR16' | 'OGG_OPUS';
+  languageCode?: string;
+  speakingRate?: number;
+  pitch?: number;
+  volumeGainDb?: number;
+}
+
+// Returns base64 audio and mime type
+const { audioContent, audioMimeType } = await ai.tts("Hello world", {
+  voice: "Puck"
 });
 ```
 

@@ -69,6 +69,8 @@ export type {
     PreviewResponse,
     GenerateCodeOptions,
     CompareFilesOptions,
+    TTSOptions,
+    TTSResponse,
 } from './types';
 export { DEFAULT_MODEL } from './types';
 

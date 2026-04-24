@@ -219,3 +219,68 @@ export interface LiveConnectionOptions {
      */
     voice?: string;
 }
+
+// ============================================================================
+// TTS Types
+// ============================================================================
+
+export interface TTSOptions {
+    /**
+     * Text to convert to speech.
+     * Can also be passed as the first argument to tts().
+     */
+    text?: string;
+
+    /**
+     * Voice name (e.g., "Charon", "Kore", "Puck").
+     * @default "Charon"
+     */
+    voice?: string;
+
+    /**
+     * Style/prompt for how to synthesize (e.g., "Read in a calm voice", "Speak with excitement").
+     */
+    prompt?: string;
+
+    /**
+     * Audio encoding format.
+     * @default "MP3"
+     */
+    encoding?: 'MP3' | 'LINEAR16' | 'OGG_OPUS';
+
+    /**
+     * Language code for the voice (e.g., "en-US", "es-ES").
+     * @default "en-US"
+     */
+    languageCode?: string;
+
+    /**
+     * Speaking rate (0.25 to 4.0).
+     * @default 1.0
+     */
+    speakingRate?: number;
+
+    /**
+     * Pitch in semitones (-12.0 to 12.0).
+     * @default 0
+     */
+    pitch?: number;
+
+    /**
+     * Volume gain in dB (-96.0 to 16.0).
+     * @default 0
+     */
+    volumeGainDb?: number;
+}
+
+export interface TTSResponse {
+    /**
+     * Base64-encoded audio content.
+     */
+    audioContent: string;
+
+    /**
+     * MIME type of the audio (e.g., "audio/mp3", "audio/wav").
+     */
+    audioMimeType: string;
+}

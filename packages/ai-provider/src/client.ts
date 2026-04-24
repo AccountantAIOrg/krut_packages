@@ -2,6 +2,8 @@ import type {
     KrutAIProviderConfig,
     GenerateOptions,
     ChatMessage,
+    TTSOptions,
+    TTSResponse,
 } from './types';
 import { DEFAULT_MODEL, DEFAULT_SERVER_URL } from './types';
 import {
@@ -249,5 +251,52 @@ export class KrutAIProvider {
 
         // Otherwise return text/content/message or empty string
         return (data.text ?? data.content ?? data.message ?? '') as T;
+    }
+
+    /**
+     * Convert text to speech using Gemini TTS.
+     *
+     * Calls: POST {serverUrl}/tts
+     * Body: { text, voice?, prompt?, encoding?, languageCode?, speakingRate?, pitch?, volumeGainDb? }
+     * Expected response: { audioContent: string, audioMimeType: string }
+     *
+     * @param text - The text to convert to speech
+     * @param options - Optional TTS configuration
+     * @returns Base64-encoded audio content and MIME type
+     */
+    async tts(text: string, options: TTSOptions = {}): Promise<TTSResponse> {
+        this.assertInitialized();
+
+        if (!text) {
+            throw new Error('Text is required for TTS');
+        }
+
+        const response = await fetch(`${this.serverUrl}/tts`, {
+            method: 'POST',
+            headers: this.authHeaders(),
+            body: JSON.stringify({
+                text,
+                voice: options.voice,
+                prompt: options.prompt,
+                encoding: options.encoding,
+                languageCode: options.languageCode,
+                speakingRate: options.speakingRate,
+                pitch: options.pitch,
+                volumeGainDb: options.volumeGainDb,
+            }),
+        });
+
+        if (!response.ok) {
+            let errorMessage = `AI server returned HTTP ${response.status} for /tts`;
+            try {
+                const errorData = (await response.json()) as { message?: string; error?: string };
+                if (errorData?.error) errorMessage = errorData.error;
+                else if (errorData?.message) errorMessage = errorData.message;
+            } catch { }
+            throw new Error(errorMessage);
+        }
+
+        const data = (await response.json()) as TTSResponse;
+        return data;
     }
 }
