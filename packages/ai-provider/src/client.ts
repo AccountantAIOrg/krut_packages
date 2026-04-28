@@ -120,33 +120,21 @@ export class KrutAIProvider {
     // ---------------------------------------------------------------------------
 
     /**
-     * Retrieves the LiveKit connection details to connect to the Gemini Live API agent.
-     * Use the returned `url` and `token` with `@livekit/components-react`.
+     * Retrieves the WebSocket URL to connect to the Gemini Live API proxy.
+     * Use the returned `url` to create a new WebSocket.
      *
-     * @param options - Optional room and participant names
+     * @param options - Optional configuration
      */
-    async getLiveConnection(options?: { room?: string; participant?: string; instructions?: string; voice?: string }): Promise<{ url: string; token: string }> {
+    async getLiveConnection(options?: { instructions?: string; voice?: string }): Promise<{ url: string; instructions?: string; voice?: string }> {
         this.assertInitialized();
 
-        const params = new URLSearchParams();
-        if (options?.room) params.set('room', options.room);
-        if (options?.participant) params.set('participant', options.participant);
-        if (options?.instructions) params.set('instructions', options.instructions);
-        if (options?.voice) params.set('voice', options.voice);
+        // Convert server URL from http/https to ws/wss
+        const wsUrl = this.serverUrl.replace(/^http/, 'ws') + '/live';
 
-        const response = await fetch(`${this.serverUrl}/live?${params.toString()}`, {
-            method: 'GET',
-            headers: this.authHeaders(),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to get LiveKit connection: ${response.statusText}`);
-        }
-
-        const data = await response.json();
         return {
-            url: data.url,
-            token: data.token,
+            url: wsUrl,
+            instructions: options?.instructions,
+            voice: options?.voice,
         };
     }
 
