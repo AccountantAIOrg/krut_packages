@@ -276,3 +276,37 @@ export interface TTSResponse {
      */
     audioMimeType: string;
 }
+
+// ============================================================================
+// STT Types
+// ============================================================================
+
+export interface STTOptions {
+    /**
+     * Audio data as base64 string or Buffer.
+     */
+    audio: string | Buffer;
+
+    /**
+     * MIME type of the audio (e.g., "audio/wav", "audio/mp3", "audio/webm").
+     */
+    mimeType?: string;
+
+    /**
+     * Language code for transcription (e.g., "en-US").
+     * If not provided, Gemini will auto-detect.
+     */
+    languageCode?: string;
+
+    /**
+     * Optional prompt to guide the transcription.
+     */
+    prompt?: string;
+}
+
+export interface STTResponse {
+    /**
+     * Transcribed text from the audio.
+     */
+    text: string;
+}

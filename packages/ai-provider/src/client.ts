@@ -4,6 +4,8 @@ import type {
     ChatMessage,
     TTSOptions,
     TTSResponse,
+    STTOptions,
+    STTResponse,
 } from './types';
 import { DEFAULT_MODEL, DEFAULT_SERVER_URL } from './types';
 import {
@@ -285,6 +287,52 @@ export class KrutAIProvider {
         }
 
         const data = (await response.json()) as TTSResponse;
+        return data;
+    }
+
+    /**
+     * Convert speech to text using Gemini STT.
+     *
+     * Calls: POST {serverUrl}/stt
+     * Body: { audio, mimeType?, languageCode?, prompt? }
+     * Expected response: { text: string }
+     *
+     * @param options - STT configuration with audio data
+     * @returns Transcribed text
+     */
+    async stt(options: STTOptions): Promise<STTResponse> {
+        this.assertInitialized();
+
+        if (!options.audio) {
+            throw new Error('Audio is required for STT');
+        }
+
+        const audioData = typeof options.audio === 'string'
+            ? options.audio
+            : options.audio.toString('base64');
+
+        const response = await fetch(`${this.serverUrl}/stt`, {
+            method: 'POST',
+            headers: this.authHeaders(),
+            body: JSON.stringify({
+                audio: audioData,
+                mimeType: options.mimeType,
+                languageCode: options.languageCode,
+                prompt: options.prompt,
+            }),
+        });
+
+        if (!response.ok) {
+            let errorMessage = `AI server returned HTTP ${response.status} for /stt`;
+            try {
+                const errorData = (await response.json()) as { message?: string; error?: string };
+                if (errorData?.error) errorMessage = errorData.error;
+                else if (errorData?.message) errorMessage = errorData.message;
+            } catch { }
+            throw new Error(errorMessage);
+        }
+
+        const data = (await response.json()) as STTResponse;
         return data;
     }
 }
