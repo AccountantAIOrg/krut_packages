@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.1.10';
 
 /**
  * Package metadata

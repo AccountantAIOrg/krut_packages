@@ -1,6 +1,6 @@
 {
     "name": "krutai",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "KrutAI - AI-powered utilities and core package",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -39,7 +39,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/AccountantAIOrg/krut_packages.git",
+        "url": "git+https://github.com/AccountantAIOrg/krut_packages.git",
         "directory": "packages/krutai"
     }
 }
