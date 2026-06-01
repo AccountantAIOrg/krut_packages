@@ -6,7 +6,7 @@
  * for a valid key and { valid: false } (or a non-2xx status) for an invalid one.
  *
  * Validation endpoint called:
- *   POST {serverUrl}/validate
+ *   POST {serverUrl}/api/validate
  *   Headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }
  *   Body:    { "apiKey": "<key>" }
  *   Expected Response: { "valid": true }
@@ -35,7 +35,7 @@ export function validateApiKeyFormat(apiKey: string): void {
 /**
  * Validates the API key against the deployed LangChain server.
  *
- * Sends a POST request to `{serverUrl}/validate` and expects:
+ * Sends a POST request to `{serverUrl}/api/validate` and expects:
  *   - HTTP 2xx status
  *   - JSON body: `{ "valid": true }`
  *
@@ -54,7 +54,7 @@ export async function validateApiKey(
         throw new KrutAIKeyValidationError('serverUrl must be a non-empty string');
     }
 
-    const url = `${serverUrl.replace(/\/$/, '')}/validate`;
+    const url = `${serverUrl.replace(/\/$/, '')}/api/validate`;
 
     try {
         const response = await fetch(url, {

@@ -131,7 +131,7 @@ export class KrutAIProvider {
         this.assertInitialized();
 
         // Convert server URL from http/https to ws/wss
-        const wsUrl = this.serverUrl.replace(/^http/, 'ws') + '/live';
+        const wsUrl = this.serverUrl.replace(/^http/, 'ws') + '/api/live';
 
         return {
             url: wsUrl,
@@ -157,7 +157,7 @@ export class KrutAIProvider {
 
         const model = options.model ?? this.resolvedModel;
 
-        const response = await fetch(`${this.serverUrl}/stream`, {
+        const response = await fetch(`${this.serverUrl}/api/stream`, {
             method: 'POST',
             headers: {
                 ...this.authHeaders(),
@@ -176,7 +176,7 @@ export class KrutAIProvider {
         });
 
         if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /stream`;
+            let errorMessage = `AI server returned HTTP ${response.status} for /api/stream`;
             try {
                 const errorData = (await response.json()) as { message?: string; error?: string };
                 if (errorData?.error) errorMessage = errorData.error;
@@ -191,7 +191,7 @@ export class KrutAIProvider {
     /**
      * Generate a response for a prompt (non-streaming).
      *
-     * Calls: POST {serverUrl}/generate
+     * Calls: POST {serverUrl}/api/generate
      * Body:  { prompt, model, system?, maxTokens?, temperature? }
      * Expected response: { text: string } or { content: string } or { message: string }
      *
@@ -203,7 +203,7 @@ export class KrutAIProvider {
         this.assertInitialized();
         const model = options.model ?? this.resolvedModel;
 
-        const response = await fetch(`${this.serverUrl}/generate`, {
+        const response = await fetch(`${this.serverUrl}/api/generate`, {
             method: 'POST',
             headers: this.authHeaders(),
             body: JSON.stringify({
@@ -223,7 +223,7 @@ export class KrutAIProvider {
         });
 
         if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /generate`;
+            let errorMessage = `AI server returned HTTP ${response.status} for /api/generate`;
             try {
                 const errorData = (await response.json()) as { message?: string; error?: string };
                 if (errorData?.error) errorMessage = errorData.error;
@@ -246,7 +246,7 @@ export class KrutAIProvider {
     /**
      * Convert text to speech using Gemini TTS.
      *
-     * Calls: POST {serverUrl}/tts
+     * Calls: POST {serverUrl}/api/tts
      * Body: { text, voice?, prompt?, encoding?, languageCode?, speakingRate?, pitch?, volumeGainDb? }
      * Expected response: { audioContent: string, audioMimeType: string }
      *
@@ -261,7 +261,7 @@ export class KrutAIProvider {
             throw new Error('Text is required for TTS');
         }
 
-        const response = await fetch(`${this.serverUrl}/tts`, {
+        const response = await fetch(`${this.serverUrl}/api/tts`, {
             method: 'POST',
             headers: this.authHeaders(),
             body: JSON.stringify({
@@ -277,7 +277,7 @@ export class KrutAIProvider {
         });
 
         if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /tts`;
+            let errorMessage = `AI server returned HTTP ${response.status} for /api/tts`;
             try {
                 const errorData = (await response.json()) as { message?: string; error?: string };
                 if (errorData?.error) errorMessage = errorData.error;
@@ -293,7 +293,7 @@ export class KrutAIProvider {
     /**
      * Convert speech to text using Gemini STT.
      *
-     * Calls: POST {serverUrl}/stt
+     * Calls: POST {serverUrl}/api/stt
      * Body: { audio, mimeType?, languageCode?, prompt? }
      * Expected response: { text: string }
      *
@@ -311,7 +311,7 @@ export class KrutAIProvider {
             ? options.audio
             : options.audio.toString('base64');
 
-        const response = await fetch(`${this.serverUrl}/stt`, {
+        const response = await fetch(`${this.serverUrl}/api/stt`, {
             method: 'POST',
             headers: this.authHeaders(),
             body: JSON.stringify({
@@ -323,7 +323,7 @@ export class KrutAIProvider {
         });
 
         if (!response.ok) {
-            let errorMessage = `AI server returned HTTP ${response.status} for /stt`;
+            let errorMessage = `AI server returned HTTP ${response.status} for /api/stt`;
             try {
                 const errorData = (await response.json()) as { message?: string; error?: string };
                 if (errorData?.error) errorMessage = errorData.error;

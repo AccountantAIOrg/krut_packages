@@ -1,7 +1,7 @@
 /**
  * @krutai/auth — Authentication package for KrutAI
  *
- * A fetch-based wrapper that calls your deployed server's `/lib-auth` routes.
+ * A fetch-based wrapper that calls your deployed server's `/api/lib-auth` routes.
  * The user's API key is validated against the server before any auth call is made.
  *
  * @example Basic usage
@@ -62,7 +62,7 @@ export { DEFAULT_SERVER_URL, DEFAULT_AUTH_PREFIX } from './types';
 /**
  * krutAuth — convenience factory.
  *
- * Creates a `KrutAuth` instance configured to call your server's `/lib-auth` routes.
+ * Creates a `KrutAuth` instance configured to call your server's `/api/lib-auth` routes.
  *
  * @param config - Auth configuration (`apiKey` and `serverUrl` are required)
  * @returns A `KrutAuth` instance — call `.initialize()` before use

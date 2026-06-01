@@ -1,6 +1,6 @@
 {
   "name": "@krutai/worker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Background worker with retry mechanism for KrutAI (powered by BullMQ)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -35,10 +35,10 @@
   "dependencies": {
     "bullmq": "5.73.5",
     "ioredis": "5.10.1",
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "peerDependencies": {
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

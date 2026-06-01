@@ -14,7 +14,7 @@ export const DEFAULT_SERVER_URL = 'http://localhost:8000' as const;
  * Default path prefix for the auth routes on the server.
  * The server mounts better-auth under this prefix.
  */
-export const DEFAULT_AUTH_PREFIX = '/lib-auth' as const;
+export const DEFAULT_AUTH_PREFIX = '/api/lib-auth' as const;
 
 /**
  * Configuration options for KrutAuth
@@ -36,7 +36,7 @@ export interface KrutAuthConfig {
 
     /**
      * Path prefix for the auth routes on the server.
-     * @default "/lib-auth"
+     * @default "/api/lib-auth"
      */
     authPrefix?: string;
 
