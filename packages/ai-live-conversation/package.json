@@ -51,6 +51,6 @@
         "directory": "packages/ai-live-conversation"
     },
     "dependencies": {
-        "krutai": "0.1.9"
+        "krutai": "0.1.10"
     }
 }

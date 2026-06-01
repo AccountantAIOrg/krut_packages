@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "peerDependencies": {
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

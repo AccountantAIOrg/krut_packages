@@ -30,10 +30,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "peerDependencies": {
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

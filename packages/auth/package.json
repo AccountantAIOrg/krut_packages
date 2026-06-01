@@ -33,7 +33,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "krutai": "^0.1.7"
+        "krutai": "0.1.10"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",

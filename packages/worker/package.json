@@ -35,10 +35,10 @@
   "dependencies": {
     "bullmq": "5.73.5",
     "ioredis": "5.10.1",
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "peerDependencies": {
-    "krutai": ">=0.1.5"
+    "krutai": "0.1.10"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -22,7 +22,7 @@ export interface DbConfigResponse {
 }
 
 export const DEFAULT_SERVER_URL = 'http://localhost:8000';
-export const DEFAULT_DB_MANAGE_PREFIX = '/db-manage';
+export const DEFAULT_DB_MANAGE_PREFIX = '/api/db-manage';
 
 export class DbService {
     private readonly apiKey: string;

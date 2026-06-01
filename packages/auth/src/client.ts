@@ -17,7 +17,7 @@ export { KrutAIKeyValidationError };
 /**
  * KrutAuth — fetch-based authentication client for KrutAI
  *
- * Calls your deployed server's `/lib-auth` routes for all auth operations.
+ * Calls your deployed server's `/api/lib-auth` routes for all auth operations.
  * The API key is validated against the server before use.
  *
  * @example
@@ -180,7 +180,7 @@ export class KrutAuth {
     /**
      * Sign up a new user with email and password.
      *
-     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-up/email
+     * Calls: POST {serverUrl}/api/lib-auth/api/auth/sign-up/email
      *
      * @param params - Sign-up parameters (email, password, name)
      * @returns The auth response containing token and user
@@ -192,7 +192,7 @@ export class KrutAuth {
     /**
      * Sign in with email and password.
      *
-     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-in/email
+     * Calls: POST {serverUrl}/api/lib-auth/api/auth/sign-in/email
      *
      * @param params - Sign-in parameters (email, password)
      * @returns The auth response containing token and user
@@ -204,7 +204,7 @@ export class KrutAuth {
     /**
      * Get the current session for a user.
      *
-     * Calls: GET {serverUrl}/lib-auth/api/auth/get-session
+     * Calls: GET {serverUrl}/api/lib-auth/api/auth/get-session
      *
      * @param sessionToken - The session token (Bearer token from sign-in)
      * @returns The session containing user and session data
@@ -237,7 +237,7 @@ export class KrutAuth {
     /**
      * Sign out the current user.
      *
-     * Calls: POST {serverUrl}/lib-auth/api/auth/sign-out
+     * Calls: POST {serverUrl}/api/lib-auth/api/auth/sign-out
      *
      * @param sessionToken - The session token to invalidate
      */

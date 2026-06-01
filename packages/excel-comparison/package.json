@@ -36,11 +36,11 @@
     "license": "MIT",
     "dependencies": {
         "exceljs": "^4.4.0",
-        "krutai": ">=0.1.5",
+        "krutai": "0.1.10",
         "xlsx": "0.18.5"
     },
     "peerDependencies": {
-        "krutai": ">=0.1.5"
+        "krutai": "0.1.10"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",

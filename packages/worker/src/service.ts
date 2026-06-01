@@ -11,7 +11,7 @@ import type {
 export { KrutAIKeyValidationError };
 
 export const DEFAULT_SERVER_URL = 'http://localhost:8000';
-export const DEFAULT_WORKER_MANAGE_PREFIX = '/worker-manage';
+export const DEFAULT_WORKER_MANAGE_PREFIX = '/api/worker-manage';
 
 function toIoRedisConnection(cfg: WorkerConfigResponse) {
     return {

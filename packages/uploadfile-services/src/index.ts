@@ -83,7 +83,7 @@ export class UploadFileServiceClient {
         formData.append('userId', userId);
         formData.append('projectId', projectId);
 
-        const response = await this.httpClient.post('/library/files', formData, {
+        const response = await this.httpClient.post('/api/library/files', formData, {
             headers: {
                 // Axios will automatically set Content-Type to multipart/form-data with boundary
                 'Content-Type': 'multipart/form-data',
@@ -103,14 +103,14 @@ export class UploadFileServiceClient {
 
         if (fetchContent) {
             // Fetch the actual file blob/buffer from the server
-            const response = await this.httpClient.get(`/library/files`, {
+            const response = await this.httpClient.get('/api/library/files', {
                 params: { key },
                 responseType: 'blob'
             });
             return response.data;
         } else {
             // Just return the URL to the file
-            return `${this.serverUrl}/library/files?key=${encodeURIComponent(key)}`;
+            return `${this.serverUrl}/api/library/files?key=${encodeURIComponent(key)}`;
         }
     }
 }
