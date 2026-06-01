@@ -1,6 +1,6 @@
 {
     "name": "@krutai/ai-live-conversation",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "AI Live Conversation - Real-time voice conversation with Gemini Live",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

@@ -1,6 +1,6 @@
 {
     "name": "@krutai/rbac",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "description": "Role-Based Access Control (RBAC) library for KrutAI",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

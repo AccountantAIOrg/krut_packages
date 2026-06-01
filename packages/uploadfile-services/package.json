@@ -1,6 +1,6 @@
 {
   "name": "@krutai/uploadfile-services",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library to handle file uploads to AWS via ai_builder backend",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
