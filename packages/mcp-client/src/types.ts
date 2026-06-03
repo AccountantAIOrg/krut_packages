@@ -29,6 +29,29 @@ export interface McpAuthStartResponse {
     authorizationUrl?: string;
 }
 
+export interface McpSupportedProvider {
+    id: string;
+    provider: string;
+    name: string;
+    serverUrl: string;
+    oauthMode: string;
+    requiresOAuthClientConfig: boolean;
+    scope?: string | null;
+    clientName?: string | null;
+    isActive: boolean;
+    sortOrder: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type McpApiErrorData = {
+    error?: string;
+    message?: string;
+    status?: string;
+    authorizationUrl?: string;
+    auth?: McpAuthStartResponse;
+};
+
 export interface McpToolCallParams {
     connectionId: string;
     toolName: string;

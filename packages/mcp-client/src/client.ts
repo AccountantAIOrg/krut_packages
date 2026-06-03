@@ -6,17 +6,34 @@ import {
 import type {
     CreateMcpConnectionParams,
     KrutMcpClientConfig,
+    McpApiErrorData,
     McpAuthStartResponse,
     McpConnection,
     McpPromptGetParams,
     McpRawRequestParams,
     McpResourceReadParams,
     McpStreamEvent,
+    McpSupportedProvider,
     McpToolCallParams,
 } from './types';
 import { DEFAULT_MCP_PREFIX, DEFAULT_SERVER_URL } from './types';
 
 export { KrutAIKeyValidationError };
+
+export class KrutMcpApiError extends Error {
+    constructor(
+        message: string,
+        readonly status: number,
+        readonly data: McpApiErrorData = {}
+    ) {
+        super(message);
+        this.name = 'KrutMcpApiError';
+    }
+
+    get authorizationUrl(): string | undefined {
+        return this.data.authorizationUrl ?? this.data.auth?.authorizationUrl;
+    }
+}
 
 export class KrutMcpClient {
     private readonly apiKey: string;
@@ -56,6 +73,10 @@ export class KrutMcpClient {
 
     async connect(params: CreateMcpConnectionParams): Promise<McpConnection> {
         return this.request<McpConnection>('POST', '/connections', params);
+    }
+
+    async listSupportedProviders(): Promise<McpSupportedProvider[]> {
+        return this.request<McpSupportedProvider[]>('GET', '/supported-providers');
     }
 
     async startAuth(connectionId: string): Promise<McpAuthStartResponse> {
@@ -158,10 +179,20 @@ export class KrutMcpClient {
         });
 
         if (!response.ok) {
-            throw new Error(await this.errorMessage(response, `MCP server returned HTTP ${response.status} for ${path}`));
+            throw await this.apiError(response, `MCP server returned HTTP ${response.status} for ${path}`);
         }
 
         return (await response.json()) as T;
+    }
+
+    private async apiError(response: Response, fallback: string): Promise<KrutMcpApiError> {
+        try {
+            const data = (await response.json()) as McpApiErrorData;
+            const message = data.error || data.message || fallback;
+            return new KrutMcpApiError(message, response.status, data);
+        } catch {
+            return new KrutMcpApiError(fallback, response.status);
+        }
     }
 
     private async errorMessage(response: Response, fallback: string): Promise<string> {

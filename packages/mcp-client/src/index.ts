@@ -12,6 +12,7 @@ import { KrutMcpClient } from './client';
 
 export { KrutMcpClient } from './client';
 export { KrutAIKeyValidationError } from './client';
+export { KrutMcpApiError } from './client';
 export {
     validateApiKey,
     validateApiKeyFormat,
@@ -19,12 +20,14 @@ export {
 export type {
     CreateMcpConnectionParams,
     KrutMcpClientConfig,
+    McpApiErrorData,
     McpAuthStartResponse,
     McpConnection,
     McpPromptGetParams,
     McpRawRequestParams,
     McpResourceReadParams,
     McpStreamEvent,
+    McpSupportedProvider,
     McpToolCallParams,
 } from './types';
 export { DEFAULT_MCP_PREFIX, DEFAULT_SERVER_URL } from './types';
