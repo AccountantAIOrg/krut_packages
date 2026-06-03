@@ -40,6 +40,32 @@ ${BACKEND_URL}/api/mcp/oauth/callback
 
 `MCP_TOKEN_ENCRYPTION_KEY` encrypts MCP OAuth access and refresh tokens. If it is not set, the backend falls back to `SESSION_SECRET`.
 
+## Supported MCP Providers
+
+Supported provider shortcuts are managed by the Krut backend. Fetch them at runtime so apps can show provider shortcuts without shipping hard-coded MCP server URLs.
+
+```ts
+const providers = await mcp.listSupportedProviders();
+
+console.table(providers);
+```
+
+Default seeded provider shortcuts:
+
+| Provider | Server URL | OAuth client setup |
+| --- | --- | --- |
+| Notion | `https://mcp.notion.com/mcp` | Dynamic Client Registration |
+| Linear | `https://mcp.linear.app/mcp` | Dynamic Client Registration |
+| Slack | `https://mcp.slack.com/mcp` | Static OAuth client config required |
+| Google Calendar | `https://calendarmcp.googleapis.com/mcp/v1` | Static OAuth client config required |
+| Gmail | `https://gmailmcp.googleapis.com/mcp/v1` | Static OAuth client config required |
+| Bitly | `https://api-ssl.bitly.com/v4/mcp` | OAuth |
+| Supabase | `https://mcp.supabase.com/mcp` | Dynamic Client Registration |
+| Sentry | `https://mcp.sentry.dev/mcp` | Dynamic Client Registration |
+
+
+Dynamic Client Registration providers can be connected directly with `connect()` + `startAuth()`.
+
 ## Quick Start
 
 ```ts
@@ -354,6 +380,24 @@ try {
 ```
 
 If a server requires OAuth and the connection is not authorized, backend calls may return an auth-required error. Call `startAuth(connection.id)` and send the user to `authorizationUrl`.
+
+For tool calls, the backend can also return an auth-required error with an authorization URL. The package preserves that response in `KrutMcpApiError`.
+
+```ts
+import { KrutMcpApiError } from "@krutai/mcp-client";
+
+try {
+  await mcp.callTool({
+    connectionId: connection.id,
+    toolName: "list_events",
+    arguments: {},
+  });
+} catch (error) {
+  if (error instanceof KrutMcpApiError && error.authorizationUrl) {
+    window.location.href = error.authorizationUrl;
+  }
+}
+```
 
 ## Full Example
 

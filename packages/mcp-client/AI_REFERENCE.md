@@ -5,3 +5,5 @@
 - Only remote `streamable-http` MCP servers are supported in v1.
 - `startAuth(connectionId)` returns an `authorizationUrl` when user browser authentication is required.
 - `streamToolCall()` returns an async iterable of NDJSON-backed events: `started`, `log`, `progress`, `task`, `result`, `error`, `done`.
+- Fetch supported provider shortcuts from the backend with `listSupportedProviders()`.
+- Dynamic Client Registration providers can be connected directly with `connect()` then `startAuth()`.

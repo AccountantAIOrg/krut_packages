@@ -1,6 +1,6 @@
 {
     "name": "@krutai/mcp-client",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "MCP client connector for KrutAI — backend-managed streamable-http MCP connections with OAuth and streaming logs",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
