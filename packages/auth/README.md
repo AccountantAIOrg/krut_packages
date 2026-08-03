@@ -85,7 +85,7 @@ await auth.resetPasswordWithOtp({
 });
 ```
 
-Registration-verification and password-reset OTP requests are each limited by the backend to three requests per client IP in a rolling one-hour window. A newly requested code replaces the previous code.
+Registration-verification and password-reset OTP requests are each limited by the backend to three requests per client IP in a rolling five-minute window. A newly requested code replaces the previous code.
 
 ## Configuration
 
