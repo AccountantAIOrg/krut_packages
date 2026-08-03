@@ -1,6 +1,6 @@
 {
     "name": "@krutai/auth",
-    "version": "0.4.5",
+    "version": "0.5.1",
     "description": "Authentication package for KrutAI — fetch-based client for your server's auth routes with API key validation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -20,6 +20,7 @@
     "scripts": {
         "prepack": "npm run build",
         "build": "tsup",
+        "test": "npm run build && node --test test/*.test.mjs",
         "dev": "tsup --watch",
         "clean": "rm -rf dist *.tsbuildinfo",
         "typecheck": "tsc --noEmit"

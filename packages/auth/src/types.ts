@@ -79,6 +79,36 @@ export interface SignInEmailParams {
     password: string;
 }
 
+/** Parameters for verifying a registration email OTP. */
+export interface VerifyEmailOtpParams {
+    /** Email address used during sign-up */
+    email: string;
+    /** Six-digit OTP sent to the email address */
+    otp: string;
+}
+
+/** Parameters for resending a registration verification OTP. */
+export interface ResendVerificationOtpParams {
+    /** Email address used during sign-up */
+    email: string;
+}
+
+/** Parameters for requesting a password-reset OTP. */
+export interface RequestPasswordResetParams {
+    /** Account email address */
+    email: string;
+}
+
+/** Parameters for resetting a password with an email OTP. */
+export interface ResetPasswordWithOtpParams {
+    /** Account email address */
+    email: string;
+    /** Six-digit password-reset OTP */
+    otp: string;
+    /** New account password */
+    password: string;
+}
+
 // ---------------------------------------------------------------------------
 // Auth response types
 // ---------------------------------------------------------------------------
@@ -121,5 +151,23 @@ export interface AuthSession {
 export interface AuthResponse {
     token: string;
     user: AuthUser;
+    [key: string]: unknown;
+}
+
+/** Sign-up response while the account is awaiting email verification. */
+export interface PendingSignUpResponse {
+    token: null;
+    user: AuthUser;
+    [key: string]: unknown;
+}
+
+/** Successful email OTP verification response. */
+export interface VerifyEmailOtpResponse extends AuthResponse {
+    status: true;
+}
+
+/** Generic response for OTP send and password-reset operations. */
+export interface AuthSuccessResponse {
+    success: boolean;
     [key: string]: unknown;
 }

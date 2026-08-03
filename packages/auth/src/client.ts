@@ -2,8 +2,15 @@ import type {
     KrutAuthConfig,
     SignUpEmailParams,
     SignInEmailParams,
+    VerifyEmailOtpParams,
+    ResendVerificationOtpParams,
+    RequestPasswordResetParams,
+    ResetPasswordWithOtpParams,
     AuthSession,
     AuthResponse,
+    PendingSignUpResponse,
+    VerifyEmailOtpResponse,
+    AuthSuccessResponse,
 } from './types';
 import { DEFAULT_SERVER_URL, DEFAULT_AUTH_PREFIX } from './types';
 import {
@@ -31,11 +38,15 @@ export { KrutAIKeyValidationError };
  *
  * await auth.initialize(); // validates key against server
  *
- * // Sign up
- * const { token, user } = await auth.signUpEmail({
+ * // Sign up, then verify the code sent to the user's email.
+ * await auth.signUpEmail({
  *   email: 'user@example.com',
  *   password: 'secret123',
  *   name: 'Alice',
+ * });
+ * const { token, user } = await auth.verifyEmailOtp({
+ *   email: 'user@example.com',
+ *   otp: '123456',
  * });
  *
  * // Sign in
@@ -183,10 +194,41 @@ export class KrutAuth {
      * Calls: POST {serverUrl}/api/lib-auth/api/auth/sign-up/email
      *
      * @param params - Sign-up parameters (email, password, name)
-     * @returns The auth response containing token and user
+     * @returns The pending user. The token remains null until email verification.
      */
-    async signUpEmail(params: SignUpEmailParams): Promise<AuthResponse> {
-        return this.request<AuthResponse>('POST', '/api/auth/sign-up/email', params);
+    async signUpEmail(params: SignUpEmailParams): Promise<PendingSignUpResponse> {
+        return this.request<PendingSignUpResponse>('POST', '/api/auth/sign-up/email', params);
+    }
+
+    /**
+     * Verify the OTP sent after email/password sign-up.
+     *
+     * A successful verification activates the account and returns a session token.
+     */
+    async verifyEmailOtp(params: VerifyEmailOtpParams): Promise<VerifyEmailOtpResponse> {
+        return this.request<VerifyEmailOtpResponse>('POST', '/api/auth/email-otp/verify-email', params);
+    }
+
+    /** Resend the registration email verification OTP. */
+    async resendVerificationOtp(params: ResendVerificationOtpParams): Promise<AuthSuccessResponse> {
+        return this.request<AuthSuccessResponse>('POST', '/api/auth/email-otp/send-verification-otp', {
+            ...params,
+            type: 'email-verification',
+        });
+    }
+
+    /**
+     * Send a password-reset OTP.
+     *
+     * The server intentionally returns the same response whether or not the email exists.
+     */
+    async requestPasswordReset(params: RequestPasswordResetParams): Promise<AuthSuccessResponse> {
+        return this.request<AuthSuccessResponse>('POST', '/api/auth/email-otp/request-password-reset', params);
+    }
+
+    /** Reset an account password using the OTP sent to its email address. */
+    async resetPasswordWithOtp(params: ResetPasswordWithOtpParams): Promise<AuthSuccessResponse> {
+        return this.request<AuthSuccessResponse>('POST', '/api/auth/email-otp/reset-password', params);
     }
 
     /**

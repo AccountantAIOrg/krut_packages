@@ -15,10 +15,15 @@
  *
  * await auth.initialize(); // validates key with server
  *
- * const { token, user } = await auth.signUpEmail({
+ * await auth.signUpEmail({
  *   email: 'user@example.com',
  *   password: 'secret123',
  *   name: 'Alice',
+ * });
+ *
+ * const { token, user } = await auth.verifyEmailOtp({
+ *   email: 'user@example.com',
+ *   otp: '123456',
  * });
  * ```
  *
@@ -52,10 +57,17 @@ export type {
     KrutAuthConfig,
     SignUpEmailParams,
     SignInEmailParams,
+    VerifyEmailOtpParams,
+    ResendVerificationOtpParams,
+    RequestPasswordResetParams,
+    ResetPasswordWithOtpParams,
     AuthSession,
     AuthSessionRecord,
     AuthUser,
     AuthResponse,
+    PendingSignUpResponse,
+    VerifyEmailOtpResponse,
+    AuthSuccessResponse,
 } from './types';
 export { DEFAULT_SERVER_URL, DEFAULT_AUTH_PREFIX } from './types';
 
@@ -88,4 +100,4 @@ export function krutAuth(config: KrutAuthConfig): KrutAuth {
 }
 
 // Package metadata
-export const VERSION = '0.4.0';
+export const VERSION = '0.5.0';
