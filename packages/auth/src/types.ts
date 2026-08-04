@@ -51,6 +51,27 @@ export interface KrutAuthConfig {
      * Database URL to be passed to the backend for better-auth
      */
     databaseUrl?: string;
+
+    /**
+     * Server-side Google OAuth configuration.
+     *
+     * Keep the client secret on the consuming application's backend. The
+     * redirect URI must point to a callback route owned by that application
+     * and must exactly match an authorized redirect URI in Google Cloud.
+     */
+    google?: GoogleOAuthConfig;
+}
+
+/** Server-side configuration for the Google authorization-code flow. */
+export interface GoogleOAuthConfig {
+    /** OAuth 2.0 client ID from Google Cloud. */
+    clientId: string;
+    /** OAuth 2.0 client secret from Google Cloud. Never expose this in a browser bundle. */
+    clientSecret: string;
+    /** Callback route in the consuming application registered with Google. */
+    redirectUri: string;
+    /** Additional scopes. `openid`, `email`, and `profile` are always requested. */
+    scopes?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +128,25 @@ export interface ResetPasswordWithOtpParams {
     otp: string;
     /** New account password */
     password: string;
+}
+
+/** Values required to redirect a user to Google and later verify the callback. */
+export interface GoogleOAuthAuthorization {
+    authorizationUrl: string;
+    state: string;
+    codeVerifier: string;
+}
+
+/** Parameters from, and server-side state associated with, the Google callback. */
+export interface CompleteGoogleOAuthParams {
+    /** One-time authorization code returned by Google. */
+    code: string;
+    /** State returned by Google. */
+    state: string;
+    /** State stored by the consuming application when OAuth was started. */
+    expectedState: string;
+    /** PKCE verifier stored by the consuming application when OAuth was started. */
+    codeVerifier: string;
 }
 
 // ---------------------------------------------------------------------------

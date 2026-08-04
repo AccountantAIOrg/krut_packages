@@ -3,15 +3,15 @@
 ## Package Overview
 
 - **Name**: `@krutai/auth`
-- **Version**: `0.5.0`
+- **Version**: `0.6.0`
 - **Purpose**: Fetch-based authentication client for KrutAI — calls your server's `/api/lib-auth` routes (powered by better-auth + PostgreSQL on the server side)
 - **Entry**: `src/index.ts` → `dist/index.{js,mjs,d.ts}`
 - **Build**: `tsup` (CJS + ESM, `krutai` external)
 
 ## ⚠️ Critical Architecture Note for AI
 
-> All auth logic and database connectivity (PostgreSQL, etc.) lives on the server.
-> This package is a **pure HTTP client** that calls the server's `/api/lib-auth` routes.
+> User/session persistence and database connectivity live on the server.
+> The package calls `/api/lib-auth` for auth operations. Its optional server-side Google flow also builds Google's authorization URL and exchanges the callback code at Google's token endpoint before forwarding the ID token to the auth server.
 
 **Do NOT suggest any of the following for this package — they do not exist:**
 - `@krutai/auth/react`
@@ -28,7 +28,7 @@
 ## Dependency Architecture
 
 ```
-@krutai/auth@0.5.0
+@krutai/auth@0.6.0
 └── dependency: krutai              ← API key validation (also peerDep)
 
 Your Server (separate codebase)
@@ -97,6 +97,8 @@ await auth.initialize(); // validates API key against server
 | `requestPasswordReset(params)` | `POST /api/lib-auth/api/auth/email-otp/request-password-reset` | Send a password-reset OTP |
 | `resetPasswordWithOtp(params)` | `POST /api/lib-auth/api/auth/email-otp/reset-password` | Reset the password using the OTP |
 | `signInEmail(params)` | `POST /api/lib-auth/api/auth/sign-in/email` | Authenticate a user |
+| `startGoogleOAuth()` | — | Build a Google authorization URL with state and PKCE |
+| `completeGoogleOAuth(params)` | Google token endpoint + `POST /api/lib-auth/google/sign-in` | Exchange the callback code and create a session |
 | `getSession(token)` | `GET /api/lib-auth/api/auth/get-session` | Retrieve session info |
 | `signOut(token)` | `POST /api/lib-auth/api/auth/sign-out` | Invalidate a session |
 | `request(method, path, body?)` | Any | Generic helper for custom endpoints |
@@ -111,7 +113,15 @@ interface KrutAuthConfig {
   serverUrl?: string;       // default: "http://localhost:8000"
   authPrefix?: string;      // default: "/api/lib-auth"
   databaseUrl?: string;     // default: process.env.DATABASE_URL (sent as x-database-url)
+  google?: GoogleOAuthConfig; // server-side only
   validateOnInit?: boolean; // default: true
+}
+
+interface GoogleOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  scopes?: string[];
 }
 ```
 
@@ -211,14 +221,43 @@ console.log("User:", session.user.email);
 await auth.signOut(token);
 ```
 
-### Example 4: Custom Endpoint
+### Example 4: Google OAuth from the consuming app's backend
+
+```typescript
+const auth = new KrutAuth({
+  apiKey: process.env.KRUTAI_API_KEY!,
+  serverUrl: "https://krut.ai",
+  databaseUrl: process.env.DATABASE_URL,
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    redirectUri: "https://your-app.com/auth/google/callback",
+  },
+});
+await auth.initialize();
+
+const started = auth.startGoogleOAuth();
+// Persist started.state and started.codeVerifier in an HTTP-only server session,
+// then redirect the browser to started.authorizationUrl.
+
+const session = await auth.completeGoogleOAuth({
+  code: callbackQuery.code,
+  state: callbackQuery.state,
+  expectedState: storedState,
+  codeVerifier: storedCodeVerifier,
+});
+```
+
+`redirectUri` is owned by the consuming application and must exactly match the Google Cloud authorized redirect URI. Google configuration and `completeGoogleOAuth` are server-only because they use the client secret. Explicit Google account linking is not part of this API.
+
+### Example 5: Custom Endpoint
 ```typescript
 const data = await auth.request("POST", "/api/auth/some-custom-endpoint", {
   someParam: "value",
 });
 ```
 
-### Example 5: Error Handling
+### Example 6: Error Handling
 ```typescript
 import { KrutAuth, KrutAuthKeyValidationError } from "@krutai/auth";
 
@@ -232,7 +271,7 @@ try {
 }
 ```
 
-### Example 6: Skip validation in tests
+### Example 7: Skip validation in tests
 ```typescript
 import { KrutAuth } from "@krutai/auth";
 
@@ -272,12 +311,13 @@ The Better Auth backend sends registration and password-reset OTPs through SMTP.
 
 ## Important Notes
 
-1. **No local database** — All auth logic runs on your server — this package is a pure HTTP client
+1. **No local database** — User, account, and session persistence always runs on the server
 2. **No SQLite** — Do not use `better-sqlite3` with this package or its server. Use PostgreSQL
 3. **API key in headers** — Every request sends `Authorization: Bearer <key>` and `x-api-key` headers
 4. **Server prefix** — Auth routes are prefixed with `/api/lib-auth` by default (configurable via `authPrefix`)
 5. **Call `initialize()` first** — Must validate API key before calling auth methods (unless `validateOnInit: false`)
 6. **Same pattern as ai-provider** — Works identically to `KrutAIProvider` — construct, initialize, call methods
+7. **Google methods are server-only** — Never import a Google-configured `KrutAuth` instance into browser code; keep OAuth state and PKCE verifier in a server-side session
 
 ## Related Packages
 

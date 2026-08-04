@@ -61,6 +61,9 @@ export type {
     ResendVerificationOtpParams,
     RequestPasswordResetParams,
     ResetPasswordWithOtpParams,
+    GoogleOAuthConfig,
+    GoogleOAuthAuthorization,
+    CompleteGoogleOAuthParams,
     AuthSession,
     AuthSessionRecord,
     AuthUser,
@@ -100,4 +103,4 @@ export function krutAuth(config: KrutAuthConfig): KrutAuth {
 }
 
 // Package metadata
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';
